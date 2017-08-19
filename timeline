@@ -1,0 +1,19 @@
+milestones
+
+PHASE 1: Framework
+ - model (the architecture that supports the world)
+   * enumerate all abstractions
+     - currently:
+       * state machine - can be parameterized, general purpose that can be applied to objects, actors, and locations and hook actions (should support naive cartesian product)
+       * object - a thing that the player can interact with
+       * actor - a thing that can interact with objects (can be player controlled)
+       * location - a thing that contains objects and actors with optional connections to other locations (exits are just objects that can be interacted with)
+       * action - created when an actor "verbs" (with a direct object where applicable)
+         action knows:
+	  - location
+	  - who committed the action (actor)
+	  - what the action was applied to (direct object)
+	  - the actual action (verb)
+ - game (the story-driven elements)
+
+PHASE 2: UI
