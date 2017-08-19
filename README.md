@@ -1,4 +1,4 @@
-# ink
+# Ink
 
 A ClojureScript framework for interactive text adventure games.
 
