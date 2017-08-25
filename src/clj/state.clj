@@ -33,19 +33,23 @@
 
 (sm-run example-dfa (list 0 1 0 0 1 0 1))
 
-(defn merge-states [s1 s2] (fn [input] [(s1 (get input 0)) (s2 (get input 1))]))
+;(defn merge-states [s1 s2] (fn [input] [(s1 (get input 0)) (s2 (get input 1))]))
 
-(defn merge-transitions [t1 t2] (fn [state] (fn [input] [((t1 (get state 0)) input) ((t2 (get state 1)) input)])))
-  
-(defn sm-product [sm1 sm2] {
-                            :state (merge-states (sm1 :state) (sm2 :state))
-                            :transition (merge-transitions (sm1 :transition) (sm2 :transition))
-                            :start [(sm1 :start) (sm2 :start)]
-                            })
+(defn merge-states [states] (fn [state] (vec (map-indexed #(%2 (get state %1)) states))))
 
-(def pdfa (sm-product example-dfa another-dfa))
+;(defn merge-transitions [t1 t2] (fn [state] (fn [input] [((t1 (get state 0)) input) ((t2 (get state 1)) input)])))
 
-(def psm (sm-product example-dfa counter-sm))
+(defn merge-transitions [ts] (fn [state] (fn [input] (vec (map-indexed #((%2 (get state %1)) input) ts)))))
 
-(sm-run pdfa (list 0 1 0 0 1 0))
+(defn sm-product [sms] {
+                        :state (merge-states (map #(% :state) sms))
+                        :transition (merge-transitions (map #(% :transition) sms))
+                        :start (vec (map #(% :start) sms))
+  })
+
+(def pdfa (sm-product (list example-dfa another-dfa)))
+
+(def psm (sm-product (list example-dfa another-dfa counter-sm)))
+
+(sm-run psm (list 0 1 0 0 1 0 1))
 
