@@ -39,9 +39,9 @@
                  :start 5
                  })
 
-(defn sm-step [dfa state input] (((dfa :transition) state) input))
+(defn sm-step [dfa] (fn [state] (fn [input] (try (or (((dfa :transition) state) input) state) (catch Exception e state)))))
 
-(defn sm-run [dfa inputs] (reduce (partial sm-step dfa) (dfa :start) inputs))
+(defn sm-run [dfa & inputs] (reduce #(((sm-step dfa) %1) %2) (dfa :start) inputs))
 
 ;; Takes a list of functions [f1 f2 f3 ...] and returns a function
 ;; which takes input
@@ -73,17 +73,13 @@
 ;; Thus the actual new state is computed by:
 ;;
 ;; ((apply juxt (fn-product (t1 t2 ...)) s) x)
-
-(defn merge-states [states] (fn-product states))
-
-(defn merge-transitions [ts] #(apply juxt ((fn-product ts) %)))
-
-;; The :start value of the product will simply be a vector consisting
-;; of the start values of all the input state machines.
+;;
+;; Of course, the :start value of the product will simply be a vector
+;; consisting of the start values of all the input state machines.
 
 (defn sm-product [sms] {
-                        :state (merge-states (map #(% :state) sms))
-                        :transition (merge-transitions (map #(% :transition) sms))
+                        :state (fn-product (map #(% :state) sms))
+                        :transition #(apply juxt ((fn-product (map sm-step sms)) %))
                         :start (vec (map #(% :start) sms))
   })
 
@@ -91,5 +87,5 @@
 
 (def psm (sm-product (list example-dfa another-dfa counter-sm)))
 
-(sm-run psm (list 0 1 0 0 1 0 1))
+(sm-run psm 1 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 0)
 
