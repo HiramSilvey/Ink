@@ -1,3 +1,17 @@
+;; A state machine is a map with three keys:
+;;
+;; :state is a function from "state IDs" (whatever those are--keywords, numbers, whatever) to state values (currently maps with just a description)
+;;
+;; Thus ((my-sm :state) :state1) will return the state object for state1
+;;
+;; :transition is a function that takes a state ID and outputs a function that turns input values into state IDs.
+;;
+;; For example, (((my-sm :transition) :state1) 1) will return the ID
+;; of the state that we should be in when we receive a "1" input in
+;; the state1 state.
+;;
+;; :start is the ID of the starting state
+
 (def example-dfa {
                   :state {
                            :A {:description "last character was a 0"}
@@ -29,17 +43,43 @@
 
 (defn sm-run [dfa inputs] (reduce (partial sm-step dfa) (dfa :start) inputs))
 
-(defn all-pairs [l1 l2] (for [x l1 y l2] [x y]))
+;; Takes a list of functions [f1 f2 f3 ...] and returns a function
+;; which takes input
+;;
+;; [x1 x2 x3 ...]
+;;
+;; and outputs
+;;
+;; [(f1 x1) (f2 x2) (f3 x3) ...]
 
-(sm-run example-dfa (list 0 1 0 0 1 0 1))
+(defn fn-product [fs] (fn [input] (vec (map-indexed #(%2 (input %1)) fs))))
 
-;(defn merge-states [s1 s2] (fn [input] [(s1 (get input 0)) (s2 (get input 1))]))
+;; Say we have state machines sm1 sm2 ... with example states s1 s2
+;; ... and with transitions t1 t2 ...
+;;
+;; The product state machine will be sm, and the product transition t
+;;
+;; A state s for sm will be [s1 s2 ...].
+;;
+;; For sm, the resulting state when we transition from state s via a
+;; given input x will be:
+;;
+;; [((t1 s1) x) ((t2 s2) x) ...]
+;;
+;; Note that [(t1 s1) (t2 s2) ...] is exactly
+;;
+;; (fn-product (t1 t2 ...)) s
+;;
+;; Thus the actual new state is computed by:
+;;
+;; ((apply juxt (fn-product (t1 t2 ...)) s) x)
 
-(defn merge-states [states] (fn [state] (vec (map-indexed #(%2 (get state %1)) states))))
+(defn merge-states [states] (fn-product states))
 
-;(defn merge-transitions [t1 t2] (fn [state] (fn [input] [((t1 (get state 0)) input) ((t2 (get state 1)) input)])))
+(defn merge-transitions [ts] #(apply juxt ((fn-product ts) %)))
 
-(defn merge-transitions [ts] (fn [state] (fn [input] (vec (map-indexed #((%2 (get state %1)) input) ts)))))
+;; The :start value of the product will simply be a vector consisting
+;; of the start values of all the input state machines.
 
 (defn sm-product [sms] {
                         :state (merge-states (map #(% :state) sms))
