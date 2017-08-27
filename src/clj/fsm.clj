@@ -1,3 +1,6 @@
+;; example:
+;; (set-start (add-state (add-state (add-transition (add-transition (get-fsm) :A 0 :B) :B 1 :A) :A (str "the A state")) :B (str "the B state")) :A)
+
 ;; return an empty state machine
 (defn get-fsm [] {:state {} :transition {} :start nil})
 
@@ -32,11 +35,29 @@
 ;;  state_lbl - the state label (identifier) to be set as the start state
 (defn set-start [fsm state_lbl] {
                                  :state (fsm :state)
-                                 :transition (fsm :tronsition)
+                                 :transition (fsm :transition)
                                  :start state_lbl
                                  }
   )
 
-;; TODO
-;; del-state
-;; del-transition
+;; delete a state from a state machine
+;; return the new state machine
+;;  fsm - the state machine
+;;  state_lbl - the state label (identifier) to be removed from the state map
+(defn del-state [fsm state_lbl] {
+                                 :state (dissoc (fsm :state) state_lbl)
+                                 :transition (fsm :transition)
+                                 :start state_lbl
+                                 }
+  )
+
+;; delete a transition from a state machine
+;; return the new state machine
+;;  fsm - the state machine
+;;  state_lbl - the state label (identifier) to be removed from the transition map
+(defn del-transition [fsm state_lbl] {
+                                      :state (fsm :state)
+                                      :transition (dissoc (fsm :transition) state_lbl)
+                                      :start state_lbl
+                                      }
+  )
