@@ -4,6 +4,13 @@
 ;; return an empty state machine
 (defn get-fsm [] {:state {} :transition {} :start nil})
 
+(defn add-states [fsm state_lbls descriptions] {
+                                                :state (zipmap state_lbls (reduce (fn [agg desc] (merge agg {:description desc})) [] descriptions))
+                                                :transition (fsm :transition)
+                                                :start (fsm :start)
+                                                }
+  )
+
 ;; add a state to a state machine
 ;; return the new state machine
 ;;  fsm - the state machine
