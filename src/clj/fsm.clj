@@ -1,14 +1,30 @@
-;; example:
-;; (set-start (add-state (add-state (add-transition (add-transition (get-fsm) :A 0 :B) :B 1 :A) :A (str "the A state")) :B (str "the B state")) :A)
+;; example one-line creation:
+(def example (set-start (add-states (add-transitions (add-transitions (get-fsm) :A [0 1] [:A :B]) :B [0 1] [:B :A]) [:A :B] [(str "the A state") (str "the B state")]) :A))
 
 ;; return an empty state machine
 (defn get-fsm [] {:state {} :transition {} :start nil})
 
+;; add n states with n corresponding descriptions to the specified state machine
+;;  fsm - the state machine
+;;  state_lbls - the state identifiers (list)
+;;  descriptions - the corresponding descriptions to the given state identifiers (list)
 (defn add-states [fsm state_lbls descriptions] {
                                                 :state (zipmap state_lbls (reduce (fn [agg desc] (merge agg {:description desc})) [] descriptions))
                                                 :transition (fsm :transition)
                                                 :start (fsm :start)
                                                 }
+  )
+
+;; add n transitions with n corresponding inputs and destinations to the specified state in the specified state machine
+;;  fsm - the state machine
+;;  state_lbl - the state identifier
+;;  inputs - the inputs of each transition (list)
+;;  dests - the destination state identifiers given each corresponding input (list)
+(defn add-transitions [fsm state_lbl inputs dests] {
+                                                    :state (fsm :state)
+                                                    :transition (merge (fsm :transition) {state_lbl (zipmap inputs dests)})
+                                                    :start (fsm :start)
+                                                    }
   )
 
 ;; add a state to a state machine
