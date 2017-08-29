@@ -1,3 +1,5 @@
+(ns ink.fsm)
+
 ;; A state machine is a map with three keys:
 ;;
 ;; :state is a function from "state IDs" (whatever those are--keywords, numbers, whatever) to state values (currently maps with just a description)
