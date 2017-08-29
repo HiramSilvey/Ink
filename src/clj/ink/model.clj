@@ -17,49 +17,17 @@
 (def example-action1 {
                       :verb "flip"
                       :direct-object "lightswitch"
-                      })
-
-(def example-action2 {
-                      :verb "dump"
-                      :direct-object "load"
-                      })
-
-(def example-aciton3 {
-                      :verb "clean"
+                      :location "kitchen"
                       })
 
 (def example-location1 {
                         :descriptor "kitchen"
-                        :objects {
-                                  :
-                                  }
+                        :objects [example-object1]
                         :state {
                                 :light {:description "the light reflects off the dirty dishes in the sink."}
                                 :dark {:description "it's too dark to see the mess from dinner."}
                                 }
-                        :transition {
-                                     :light { :dark}
-                                     :dark {example-aciton :light}
-                                     }
+                        :transition (if #(and (= %1 "lightswitch") (= %2 :on)) :light :dark)
                         :start :dark
                         }
   )
-
-(def example-location2 {
-                        :descriptor "bathroom"
-                        :state {
-                                :clean {:description "the spotless ivory gleams with pride"}
-                                :dirty {:description "there's a mysterious brown streak on the wall..."}
-                                }
-                        :transition {
-                                     :clean {example-action3 :clean example-action2 :dirty}
-                                     :dirty {example-action3 :clean}
-                                     }
-                        :start :clean
-                        })
-
-(def example-model {
-                    :location {
-
-                               }
-                    })
