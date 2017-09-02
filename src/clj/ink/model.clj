@@ -10,15 +10,31 @@
 (def example-object1 {
                       :descriptor "lightswitch"
                       :state {
-                              :on {:description "currently on"}
-                              :off {:description "currently off"}
+                              :on {:description "currently on" :events (:enlightened)}
+                              :off {:description "currently off" :events (:benighted)}
+                              :broken {:description "broken" :events (:gebroken)}
                               }
                       :transition {
-                                   :on {"flip" :off} ;;macro with print?? return off
-                                   :off {"flip" :on}
+                                   :on {:flip :off :break :broken} ;;macro with print?? return off
+                                   :off {:flip :on :break :broken}
                                    }
                       :start :off
                       })
+
+
+;; Pseudocode
+
+(defn do-action [action actor model]
+  (let [loc (query-model "GET location FROM model.locations WHERE actor in location")]
+    (apply-event (make-event action loc model) model)))
+
+(defn apply-event [event model]
+  )
+  
+    
+(def events {:flip {:scope }
+             :
+
 
 (def example-action1 {
                       :verb "flip"
