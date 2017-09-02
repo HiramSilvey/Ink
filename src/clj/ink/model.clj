@@ -24,17 +24,29 @@
 
 ;; Pseudocode
 
-(defn do-action [action actor model]
-  (let [loc (query-model "GET location FROM model.locations WHERE actor in location")]
-    (apply-event (make-event action loc model) model)))
+;; A scope is a function that takes in the model and outputs a list of objects.  Some example scopes are:
 
-(defn apply-event [event model]
-  )
+(defn current-room [model] (query-model model "SELECT room FROM model.rooms WHERE player in room")) ; This is a fake language fo querying the model.  We could have a sophisticated macro language for this
+(defn one-neighbourhood [model] (query-model model "SELECT room as my-room FROM model.rooms WHERE player in room UNION ALL SELECT room FROM model.rooms WHERE my-room in room.connections"))
+
+;; Perform an action: Returns (or rather, should return) the model after the action is applied
+
+(defn do-action [action actor model]
+  (let [targets (((events event) :scope) model) ; The list of objects to apply the event to (targets) is derived from the event's scope and the current state
+        event (make-event action model)]    ; The event is derived from the action
+    (map (partial apply-event event model) targets))) ; Apply the event TODO: should actually return the model suitably updated, rather than just the objects
+
+;; Trigger an event: Returns the object after the event is applied
+
+(defn apply-event [event model obj]
+  (sm-step obj (obj :current-state) event)
   
     
-(def events {:flip {:scope }
-             :
+(def events {:flip {:scope current-room}
+             :scream {:scope one-neighbourhood}})
 
+;; End of pseudocode
+  
 
 (def example-action1 {
                       :verb "flip"
