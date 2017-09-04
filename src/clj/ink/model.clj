@@ -28,19 +28,49 @@
 
 (defn current-room [model] (query-model model "SELECT room FROM model.rooms WHERE player in room")) ; This is a fake language fo querying the model.  We could have a sophisticated macro language for this
 (defn one-neighbourhood [model] (query-model model "SELECT room as my-room FROM model.rooms WHERE player in room UNION ALL SELECT room FROM model.rooms WHERE my-room in room.connections"))
+                                        ; Other examples might include:
+                                        ; - Any room with a plant in it
+                                        ; - Any room with a player in it
+                                        ; - All rooms connected to the current one and with the door betweent them open
 
-;; Perform an action: Returns (or rather, should return) the model after the action is applied
+
+;; Perform an action: Returns (or rather, should return) the model after the action is applied and after all conequent events have been propagated
 
 (defn do-action [action actor model]
-  (let [targets (((events event) :scope) model) ; The list of objects to apply the event to (targets) is derived from the event's scope and the current state
-        event (make-event action model)]    ; The event is derived from the action
-    (map (partial apply-event event model) targets))) ; Apply the event TODO: should actually return the model suitably updated, rather than just the objects
+  (let [event (make-event action actor model)             ; The event is derived from the action
+        targets (if (= nil (action :object))              ; The list of objects to apply the event to (targets) is derived from the event's scope and
+                  (((events event) :scope) model)         ; the current state
+                  (list (action :object))]  
+        
+        (apply (partial assoc model)
+               (interleave targets (map (partial apply-event event model) targets)))))) ; Apply the event to all targets
+
+  ;; Example of this last bit in action:
+  ;;
+  ;; user=> d
+  ;; {:A 1, :B 2, :C 3}
+  ;; user=> v
+  ;; [:A :B]
+  ;; user=> (map #(+ (d %) 4) v)
+  ;; (5 6)
+  ;; user=> (interleave v (map #(+ (d %) 4) v))
+  ;; (:A 5 :B 6)
+  ;; user=> (apply (partial assoc d) (interleave v (map #(+ (d %) 4) v)))
+  ;; {:A 5, :B 6, :C 3}
+
+  
+;; For example: (do-action :flip model)
+
+
+(defn make-event [action actor model] nil) ; Somehow there should be a correspondence between actions and events
 
 ;; Trigger an event: Returns the object after the event is applied
 
 (defn apply-event [event model obj]
   (sm-step obj (obj :current-state) event)
-  
+
+
+;; Set of all defined events
     
 (def events {:flip {:scope current-room}
              :scream {:scope one-neighbourhood}})
