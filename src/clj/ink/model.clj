@@ -7,7 +7,23 @@
 ;;  1. output the result of the transition (output is not a return! unless we want it to return the output and have the caller of the transition output)
 ;;  2. return the new state (what saves all the current states? the model, so it seems like it HAS to be returned or else it's impossible to know the current states)
 
-(def example-object1 {
+(def player1 {:descriptor "player"})
+
+(def room1 {
+            :descriptor "room1"
+            :state {
+                    :lit {:description "An empty room"}
+                    :dark {:description "A dark room"}
+                    }
+            :transition {
+                         :lit {:benighted :dark :gebroken :dark}
+                         :dark {:enlightened :lit}
+                         }
+            :start :lit
+            :inventory [player1]
+            }
+
+(def switch1 {
                       :descriptor "lightswitch"
                       :state {
                               :on {:description "currently on" :events (:enlightened)}
@@ -18,7 +34,7 @@
                                    :on {:flip :off :break :broken} ;;macro with print?? return off
                                    :off {:flip :on :break :broken}
                                    }
-                      :start :off
+                      :start :on
                       })
 
 
@@ -37,46 +53,37 @@
 ;; Perform an action: Returns (or rather, should return) the model after the action is applied and after all conequent events have been propagated
 
 (defn do-action [action actor model]
-  (let [event (make-event action actor model)             ; The event is derived from the action
-        targets (if (= nil (action :object))              ; The list of objects to apply the event to (targets) is derived from the event's scope and
-                  (((events event) :scope) model)         ; the current state
-                  (list (action :object))]  
-        
-        (apply (partial assoc model)
-               (interleave targets (map (partial apply-event event model) targets)))))) ; Apply the event to all targets
+  (let [event (make-event action actor model)]
+    (apply-events [event] model)))
 
-  ;; Example of this last bit in action:
-  ;;
-  ;; user=> d
-  ;; {:A 1, :B 2, :C 3}
-  ;; user=> v
-  ;; [:A :B]
-  ;; user=> (map #(+ (d %) 4) v)
-  ;; (5 6)
-  ;; user=> (interleave v (map #(+ (d %) 4) v))
-  ;; (:A 5 :B 6)
-  ;; user=> (apply (partial assoc d) (interleave v (map #(+ (d %) 4) v)))
-  ;; {:A 5, :B 6, :C 3}
-
+(defn apply-events [events model]
+  (for [e events] 
+    (let [targets )
+          results (map (partial apply-event event model) targets)
+          [new-objs lists-of-events] (apply mapv vector results)
+          new-events (concat more-events)
+          new-model (apply (partial assoc model) (interleave targets new-objs))]
+      (if (= (count new-events) 0) new-model (recur new-events new-model)))))
   
-;; For example: (do-action :flip model)
+(defn make-event [action actor model]
+  {:verb (action :verb)
+   :targets (if (= nil (action :object))
+              (((get-event :verb) :scope) model)
+              (list (action :object)))})
 
-
-(defn make-event [action actor model] nil) ; Somehow there should be a correspondence between actions and events
-
-;; Trigger an event: Returns the object after the event is applied
+;; Trigger an event: Returns the object after the event is applied as well as a list of events triggered thereby
 
 (defn apply-event [event model obj]
-  (sm-step obj (obj :current-state) event)
+  (let [new-state (sm-step obj (obj :current-state) event)
+        new-obj (assoc obj :current-state new-state)
+        new-events (if (= (obj :current-state) new-state) [] (((obj :state) new-state) :events))]
+    [new-obj new-events]))
 
 
-;; Set of all defined events
+;; All defined events
     
-(def events {:flip {:scope current-room}
-             :scream {:scope one-neighbourhood}})
-
-;; End of pseudocode
-  
+(def get-events {:flip {:scope current-room}
+                 :scream {:scope one-neighbourhood}})
 
 (def example-action1 {
                       :verb "flip"
