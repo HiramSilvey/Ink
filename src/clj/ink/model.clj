@@ -58,7 +58,7 @@
 
 (defn apply-events [events model]
   (for [e events] 
-    (let [targets )
+    (let [targets
           results (map (partial apply-event event model) targets)
           [new-objs lists-of-events] (apply mapv vector results)
           new-events (concat more-events)
