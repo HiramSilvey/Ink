@@ -21,7 +21,7 @@
                          }
             :start :lit
             :inventory [player1]
-            }
+            })
 
 (def switch1 {
                       :descriptor "lightswitch"
@@ -31,7 +31,7 @@
                               :broken {:description "broken" :events (:gebroken)}
                               }
                       :transition {
-                                   :on {:flip :off :break :broken} ;;macro with print?? return off
+                                   :on {:flip :off :break :broken}
                                    :off {:flip :on :break :broken}
                                    }
                       :start :on
