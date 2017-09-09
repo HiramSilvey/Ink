@@ -1,4 +1,5 @@
 (load-file "fsm.clj")
+(use '[clojure.string :only (join)])
 
 ;; UPDATE: hooks should exist on the level that they will take effect. For example, if a circuit breaker is pulled in room A, and the whole house must go dark, then the model (which owns all the rooms) or some sub-model with just the house in it should own the hook. The hook takes 3 things minimally: the action (which consists of a verb and direct object), and the returned state of that object once the action has taken place. Actions with no direct objects (like "scream") have a direct object of self. Hooks activate when certain actions + state returned combinations are met. Actions are applied to the top level (model) and then passed down accordingly until the proper object is met. For example, "flip switch" will be applied to model -> kitchen -> lightswitch, and then the state returned by lightswitch will propogate up back to kitchen, then model. Any hooks in either of those can be set off if the dependencies are met.
 
@@ -10,31 +11,37 @@
 
 (def room1 {
             :descriptor "room1"
-            :state {
-                    :lit {:description "An empty room"}
-                    :dark {:description "A dark room"}
-                    }
-            :transition {
-                         :lit {:benighted :dark :gebroken :dark}
-                         :dark {:enlightened :lit}
-                         }
-            :start :lit
-            :inventory [player1]
+            :identity {
+                       :state {
+                               :lit {:description "An empty room"}
+                               :dark {:description "A dark room"}
+                               }
+                       :transition {
+                                    :lit {:benighted :dark :gebroken :dark}
+                                    :dark {:enlightened :lit}
+                                    }
+                       :start :lit
+                       }
+            :inventory {
+                        :state (fn [items] {:description (join " " items)})
+                        :transition (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items))))
+                        :start []
+                        }
             })
 
 (def switch1 {
-                      :descriptor "lightswitch"
-                      :state {
-                              :on {:description "currently on" :events (:enlightened)}
-                              :off {:description "currently off" :events (:benighted)}
-                              :broken {:description "broken" :events (:gebroken)}
-                              }
-                      :transition {
-                                   :on {:flip :off :break :broken}
-                                   :off {:flip :on :break :broken}
-                                   }
-                      :start :on
-                      })
+              :descriptor "lightswitch"
+              :state {
+                      :on {:description "currently on" :events [:enlightened]}
+                      :off {:description "currently off" :events [:benighted]}
+                      :broken {:description "broken" :events [:gebroken]}
+                      }
+              :transition {
+                           :on {:flip :off :break :broken}
+                           :off {:flip :on :break :broken}
+                           }
+              :start :on
+              })
 
 
 ;; Pseudocode
@@ -43,10 +50,10 @@
 
 (defn current-room [model] (query-model model "SELECT room FROM model.rooms WHERE player in room")) ; This is a fake language fo querying the model.  We could have a sophisticated macro language for this
 (defn one-neighbourhood [model] (query-model model "SELECT room as my-room FROM model.rooms WHERE player in room UNION ALL SELECT room FROM model.rooms WHERE my-room in room.connections"))
-                                        ; Other examples might include:
-                                        ; - Any room with a plant in it
-                                        ; - Any room with a player in it
-                                        ; - All rooms connected to the current one and with the door betweent them open
+; Other examples might include:
+; - Any room with a plant in it
+; - Any room with a player in it
+; - All rooms connected to the current one and with the door betweent them open
 
 
 ;; Perform an action: Returns (or rather, should return) the model after the action is applied and after all conequent events have been propagated
@@ -63,7 +70,7 @@
           new-events (concat more-events)
           new-model (apply (partial assoc model) (interleave targets new-objs))]
       (if (= (count new-events) 0) new-model (recur new-events new-model)))))
-  
+
 (defn make-event [action actor model]
   {:verb (action :verb)
    :targets (if (= nil (action :object))
@@ -80,7 +87,7 @@
 
 
 ;; All defined events
-    
+
 (def get-events {:flip {:scope current-room}
                  :scream {:scope one-neighbourhood}})
 
