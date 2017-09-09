@@ -24,10 +24,12 @@
                        }
             :inventory {
                         :state (fn [items] {:description (join " " items)})
-                        :transition (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items))))
+                        :transition (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items) :else items)))
                         :start []
                         }
             })
+
+(defn test-add-room ((((room1 :inventory) :state) (reduce #(((sm-step (room1 :inventory)) %1) %2) [] [{:verb "add" :item "pen"} {:verb "add" :item "paper"}])) :description))
 
 (def switch1 {
               :descriptor "lightswitch"
@@ -58,6 +60,17 @@
 
 ;; Perform an action: Returns (or rather, should return) the model after the action is applied and after all conequent events have been propagated
 
+;; All defined events
+
+(def get-event {:flip {:scope current-room}
+                 :scream {:scope one-neighbourhood}})
+
+(defn make-event [action actor model]
+  {:verb (action :verb)
+   :targets (if (= nil (action :object))
+              (((get-event :verb) :scope) model)
+              (list (action :object)))})
+
 (defn do-action [action actor model]
   (let [event (make-event action actor model)]
     (apply-events [event] model)))
@@ -71,12 +84,6 @@
           new-model (apply (partial assoc model) (interleave targets new-objs))]
       (if (= (count new-events) 0) new-model (recur new-events new-model)))))
 
-(defn make-event [action actor model]
-  {:verb (action :verb)
-   :targets (if (= nil (action :object))
-              (((get-event :verb) :scope) model)
-              (list (action :object)))})
-
 ;; Trigger an event: Returns the object after the event is applied as well as a list of events triggered thereby
 
 (defn apply-event [event model obj]
@@ -85,11 +92,6 @@
         new-events (if (= (obj :current-state) new-state) [] (((obj :state) new-state) :events))]
     [new-obj new-events]))
 
-
-;; All defined events
-
-(def get-events {:flip {:scope current-room}
-                 :scream {:scope one-neighbourhood}})
 
 (def example-action1 {
                       :verb "flip"
