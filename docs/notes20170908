@@ -1,0 +1,15 @@
+actions -> events -> model updates
+    pro: easy to extend
+    con: creates massive data structure of all events
+    overall feeling: positive
+default scope for an action is all rooms the player is currently in
+being in the room just means the player is in the room's inventory
+inventories aren't mutually exclusive
+if there's an object that exists "everywhere," there can be a room called "everywhere" where both the object and the player are always in the inventory
+inventories are state machines which can be updated with "add x" and "remove y" transitions
+
+Q: should an object have 1 state machine that's a product of its normal state machine + its inventory state machine?
+or
+should an object have 2 state machines?
+
+next TODO: inventories and how they interact with the model
