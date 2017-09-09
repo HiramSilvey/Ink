@@ -1,5 +1,4 @@
-(ns ink.model
-  (:require 'ink.fsm :as 'fsm))
+(load-file "fsm.clj")
 
 ;; UPDATE: hooks should exist on the level that they will take effect. For example, if a circuit breaker is pulled in room A, and the whole house must go dark, then the model (which owns all the rooms) or some sub-model with just the house in it should own the hook. The hook takes 3 things minimally: the action (which consists of a verb and direct object), and the returned state of that object once the action has taken place. Actions with no direct objects (like "scream") have a direct object of self. Hooks activate when certain actions + state returned combinations are met. Actions are applied to the top level (model) and then passed down accordingly until the proper object is met. For example, "flip switch" will be applied to model -> kitchen -> lightswitch, and then the state returned by lightswitch will propogate up back to kitchen, then model. Any hooks in either of those can be set off if the dependencies are met.
 
