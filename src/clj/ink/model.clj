@@ -20,7 +20,7 @@
                          }
             :start :lit
             :inventory [player1]
-            }
+            })
 
 (def switch1 {
                       :descriptor "lightswitch"
@@ -30,7 +30,7 @@
                               :broken {:description "broken" :events (:gebroken)}
                               }
                       :transition {
-                                   :on {:flip :off :break :broken} ;;macro with print?? return off
+                                   :on {:flip :off :break :broken}
                                    :off {:flip :on :break :broken}
                                    }
                       :start :on
@@ -57,7 +57,7 @@
 
 (defn apply-events [events model]
   (for [e events] 
-    (let [targets )
+    (let [targets
           results (map (partial apply-event event model) targets)
           [new-objs lists-of-events] (apply mapv vector results)
           new-events (concat more-events)
