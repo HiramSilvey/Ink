@@ -23,13 +23,13 @@
                        :start :lit
                        }
             :inventory {
-                        :state (fn [items] {:description (join " " items)})
+                        :state (fn [items] {:description (join " " (reduce #(conj %1 (%2 :descriptor)) [] items))})
                         :transition (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items) :else items)))
                         :start []
                         }
             })
 
-(defn test-add-room ((((room1 :inventory) :state) (reduce #(((sm-step (room1 :inventory)) %1) %2) [] [{:verb "add" :item "pen"} {:verb "add" :item "paper"}])) :description))
+(def test-room-add ((((room1 :inventory) :state) (reduce #(((sm-step (room1 :inventory)) %1) %2) [] [{:verb "add" :item {:descriptor "pen"}} {:verb "add" :item {:descriptor "paper"}}])) :description))
 
 (def switch1 {
               :descriptor "lightswitch"
