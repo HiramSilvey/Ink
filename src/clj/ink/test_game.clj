@@ -8,7 +8,7 @@
                         })
 
 (def player {
-           :descriptor "261"
+           :descriptor "player"
            :identity {
                       :state {
                               :default {:description "I'm wearing a dirty shirt with a faint number on the chest... 261?"}

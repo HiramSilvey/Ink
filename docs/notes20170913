@@ -1,0 +1,17 @@
+"press button" -> press button action -> boom event -> kitchen window break event
+                                            |                   |
+                                        explosion sound         |
+                                                        glass breaking sound
+
+Both the explosion sound and glass breaking sound are "transitive conditions" which
+are created by events and added to a condition queue. After all events transpire for
+the current loop iteration they are in (in the main loop), the transitive condition
+queue is emptied by a print function in the main loop. The function will assess
+what needs to be printed given the conditions. For example, if the player is in the house
+and the explosion was in the forest, then the player should hear the boom coming
+from the forest. However, if the player is currently wearing ear plugs, then the
+player should not hear the boom. These conditions only exist in the current
+iteration of the loop and do not exist anymore after the current iteration.
+However, the states that were affected by the events are still changed, as states
+in this current design are permanent. These conditions provide a way for
+temporary information.
