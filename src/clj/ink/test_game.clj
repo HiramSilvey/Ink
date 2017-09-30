@@ -1,18 +1,14 @@
 (load-file "fsm.clj")
 (use '[clojure.string :only (join)])
 
-(defn std_inventory [] {
-                        :state (fn [items] {:description (join "  " (reduce #(conj %1 (%2 :descriptor)) [] items))})
-                        :transition (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items) :else items)))
-                        :start [] 
-                        })
+(defn std_inventory_state [] (fn [items] {:description (join "  " (reduce #(conj %1 (%2 :descriptor)) [] items))}))
+(defn std_inventory_transition [] (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items) :else items))))
 
 (def player {
            :descriptor "player"
            :identity {
                       :state {
                               :default {:description "I'm wearing a dirty shirt with a faint number on the chest... 261?"}
-                              :sick {:description "I don't feel so well..."}
                               }
                       :transition {
                                    :default {:getsick :sick}
@@ -20,7 +16,11 @@
                                    }
                       :start :default
                       }
-           :inventory std_inventory
+           :inventory {
+                       :state std_inventory_state
+                       :transition std_inventory_transition
+                       :start []
+                       }
            }
   )
 
@@ -41,9 +41,10 @@
            :identity {
                       :state {
                               :default {:description "A sticky substance with a light green hue..."}
+                              :eaten {:events [:getsick]}
                               }
                       :transition {
-                                   :default {}
+                                   :default {:eat :eaten}
                                    }
                       :start :default
                       }
@@ -68,16 +69,18 @@
            :descriptor "room"
            :identity {
                       :state {
-                              :bright {:description "A dank room made of concrete from floor to ceiling." :events [:items_visible]}
-                              :dark {:description "A dimly lit room with a weird smell... it looks like there's a lightswitch on the wall."}
+                              :default {:description "A dimly lit room with a weird smell... it looks like there's a lightswitch on the wall."}
+                              :visible {:description "A dank room made of concrete from floor to ceiling. You see goo, a scalpel, and a lightswitch."}
                               }
                       :transition {
-                                   :bright {:light_off :dark}
-                                   :dark {:light_on :bright}
+                                   :default {:light_on :visible}
+                                   :visible {:light_off :default}
                                    }
                       }
            :inventory {
-                       
+                       :state std_inventory_state
+                       :transition std_inventory_transition
+                       :start [player obj1 obj2 obj3]
                        }
            }
   )
