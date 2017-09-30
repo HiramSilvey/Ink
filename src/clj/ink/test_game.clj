@@ -1,27 +1,28 @@
 (load-file "fsm.clj")
+(require '[clojure.string :as str])
 (use '[clojure.string :only (join)])
 
 (defn std_inventory_state [] (fn [items] {:description (join "  " (reduce #(conj %1 (%2 :descriptor)) [] items))}))
 (defn std_inventory_transition [] (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items) :else items))))
 
 (def player {
-           :descriptor "player"
-           :identity {
-                      :state {
-                              :default {:description "I'm wearing a dirty shirt with a faint number on the chest... 261?"}
-                              }
-                      :transition {
-                                   :default {:getsick :sick}
-                                   :sick {:getcured :default}
-                                   }
-                      :start :default
-                      }
-           :inventory {
-                       :state std_inventory_state
-                       :transition std_inventory_transition
-                       :start []
-                       }
-           }
+             :descriptor "player"
+             :identity {
+                        :state {
+                                :default {:description "I'm wearing a dirty shirt with a faint number on the chest... 261?"}
+                                }
+                        :transition {
+                                     :default {:getsick :sick}
+                                     :sick {:getcured :default}
+                                     }
+                        :start :default
+                        }
+             :inventory {
+                         :state std_inventory_state
+                         :transition std_inventory_transition
+                         :start []
+                         }
+             }
   )
 
 (def obj1 {
@@ -84,3 +85,9 @@
                        }
            }
   )
+
+(defn main [] (
+               let [user_input (read-line)] (
+                                             (str/split user_input #" ")
+                                             )
+               ))
