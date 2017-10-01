@@ -1,6 +1,8 @@
 (load-file "fsm.clj")
 (require '[clojure.string :as str])
 (use '[clojure.string :only (join)])
+(ns ink.test_game
+  (:gen-class))
 
 (defn std_inventory_state [] (fn [items] {:description (join "  " (reduce #(conj %1 (%2 :descriptor)) [] items))}))
 (defn std_inventory_transition [] (fn [items] (fn [input] (cond (= (input :verb) "add") (conj items (input :item)) (= (input :verb) "rem") (remove #{input :item} items) :else items))))
@@ -86,8 +88,23 @@
            }
   )
 
-(defn main [] (
+(def model {
+            :inventory {
+                        :state std_inventory_state
+                        :transition std_inventory_transition
+                        :start [room]
+                        }
+            })
+
+(def get-event {
+                :flip
+                })
+
+(defn -main [] (
                let [user_input (read-line)] (
-                                             (str/split user_input #" ")
+                                             let [[verb obj] (str/split user_input #" ")] (
+                                                                                           do-action {:verb verb :object obj} player model
+                                                                                           )
                                              )
+               recur
                ))
