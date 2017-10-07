@@ -1,0 +1,27 @@
+Model: A complete description of the current state of the universe
+Object: Player, NPC, Room, Item
+Event: Something that happens
+
+Model: map
+    Player: object
+    Objects: list of objects
+    Events: list of events
+
+Object: map
+    Descriptor: string
+    Inventory: list of objects
+    State machine: map
+        States: map
+            keyword -> string
+        Transitions: map (key = keyword, value = map (key = keyword, value = keyword))
+        Transitions: map
+            keyword -> map
+                keyword -> map
+                    Target: keyword
+                    Events: list of events
+        Current: keyword
+
+Event: map
+    Descriptor: string
+    Scope: fn
+    Effect: string
