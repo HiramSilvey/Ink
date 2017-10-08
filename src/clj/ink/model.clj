@@ -1,4 +1,5 @@
-(load-file "fsm.clj")
+(ns ink.model)
+(use 'ink.fsm)
 (use '[clojure.string :only (join)])
 
 ;; UPDATE: hooks should exist on the level that they will take effect. For example, if a circuit breaker is pulled in room A, and the whole house must go dark, then the model (which owns all the rooms) or some sub-model with just the house in it should own the hook. The hook takes 3 things minimally: the action (which consists of a verb and direct object), and the returned state of that object once the action has taken place. Actions with no direct objects (like "scream") have a direct object of self. Hooks activate when certain actions + state returned combinations are met. Actions are applied to the top level (model) and then passed down accordingly until the proper object is met. For example, "flip switch" will be applied to model -> kitchen -> lightswitch, and then the state returned by lightswitch will propogate up back to kitchen, then model. Any hooks in either of those can be set off if the dependencies are met.
@@ -73,12 +74,12 @@
 
 (defn do-action [action actor model]
   (let [event (make-event action actor model)]
-    (apply-events [event] model)))
+    (apply-events [event] model '())))
 
-(defn apply-events [events model]
+(defn apply-events [events model side-effects]
   (for [e events] 
     (let [targets
-          results (map (partial apply-event event model) targets)
+          results (map (partial apply-event e model) targets)
           [new-objs lists-of-events] (apply mapv vector results)
           new-events (concat more-events)
           new-model (apply (partial assoc model) (interleave targets new-objs))]
@@ -87,7 +88,7 @@
 ;; Trigger an event: Returns the object after the event is applied as well as a list of events triggered thereby
 
 (defn apply-event [event model obj]
-  (let [new-state (sm-step obj (obj :current-state) event)
+  (let [new-state (ink.fsm/sm-step obj (obj :current-state) event)
         new-obj (assoc obj :current-state new-state)
         new-events (if (= (obj :current-state) new-state) [] (((obj :state) new-state) :events))]
     [new-obj new-events]))
@@ -117,3 +118,18 @@
 (defn act [action]
   (fsm/sm-run (action :direct-object) (action :verb))
   )
+
+
+
+(defn parse-action [text] (let [words split " " text 1)] {:verb (get words 0) :object (get words 1)})
+
+(defn print-news [model actor side-effects] (print "stuff"))
+
+(defn run [model actor]
+  (let [news (do-action (parse-action (get-input) actor model))
+        new-model (news :model)
+        side-effects (news :effects)
+        new-actor (news :actor)]
+    (do
+      (print-news new-model new-actor side-effects)
+      (recur next-model new-actor))))
