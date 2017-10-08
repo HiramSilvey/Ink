@@ -9,7 +9,9 @@
                  [org.clojure/tools.nrepl   "0.2.13"     :scope "test"]
                  [weasel                    "0.7.0"      :scope "test"]
                  [org.clojure/clojurescript "1.9.562"]
-                 [reagent "0.6.0"]])
+                 [reagent "0.6.0"]
+		 [org.clojure/clojure "1.9.0-alpha16"]
+		 [org.clojure/test.check "0.9.0" :scope "test"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]
