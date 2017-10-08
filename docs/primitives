@@ -13,7 +13,6 @@ Object: map
     State machine: map
         States: map
             keyword -> string
-        Transitions: map (key = keyword, value = map (key = keyword, value = keyword))
         Transitions: map
             keyword -> map
                 keyword -> map
