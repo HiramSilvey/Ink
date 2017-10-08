@@ -10,7 +10,7 @@
         verb (action :verb)
         event ((model :events) verb)
         in-scope ((event :scope) model)
-        targets (if (contains? action :object) (in-scope (action :object)) in-scope)]
+        targets (if (contains? action :object) (in-scope (action :object)) (reduce #(conj %1 (%2 1)) [] (seq in-scope)))]
     {:event (event :transition) :targets targets}))
 
 (defn scope-all [model] (model :objects))
