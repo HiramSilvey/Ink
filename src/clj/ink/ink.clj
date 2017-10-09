@@ -22,11 +22,13 @@
     {:action (event-obj :transition) :targets targets}))
 
 (defn apply-event [model action target]
-  (let [current-state ((target :state-machine) :current)
-        results ((((target :state-machine) :transitions) current-state) action)
-        new-state (results :target)
-        new-event-objs (results :events)]
-    [(update target :state-machine assoc :current new-state) new-event-objs]))
+  (try
+    (let [current-state ((target :state-machine) :current)
+          results ((((target :state-machine) :transitions) current-state) action)
+          new-state (results :target)
+          new-event-objs (results :events)]
+      [(update target :state-machine assoc :current new-state) new-event-objs])
+    (catch Exception e [target])))
 
 (defn apply-events [model cmd event-objs]
   (let [event-obj (first event-objs)
@@ -36,7 +38,7 @@
         results (map (partial apply-event model action) targets)
         [new-objs new-event-objs] (apply mapv vector results)
         total-event-objs (concat (drop 1 event-objs) (reduce conj new-event-objs))
-        new-model (update model :objects 
+        new-model (assoc model :objects 
                           #(for [old-obj %1 new-obj %2] 
                              (if (= (old-obj :descriptor) (new-obj :descriptor))
                                new-obj
