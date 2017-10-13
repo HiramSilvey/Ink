@@ -69,6 +69,15 @@
       [(update target :state-machine assoc :current new-state) new-event-objs])
     (catch Exception e [target])))
 
+(defn update-objects [model new-objs] (assoc model :objects
+                                             (loop [acc (model :objects) to-add new-objs]
+                                               (if (= (count to-add) 0)
+                                                 acc
+                                                 (let [x (first to-add)] ; x is each object in to-add
+                                                   (if (some #(= (x :descriptor) (% :descriptor)) acc) ; if the object is present
+                                                     (recur (vec (map #(if (= (x :descriptor) (% :descriptor)) x %) acc)) (rest to-add)) ; update it in the array
+                                                     (recur (conj acc x) (rest to-add)))))))) ; else add it to the array
+
 (defn apply-events [model cmd event-objs]
   (let [event-obj (first event-objs)
         event (get-event model cmd event-obj)
@@ -77,11 +86,7 @@
         results (map (partial apply-event model action) targets)
         [new-objs new-event-objs] (apply mapv vector results)
         total-event-objs (concat (drop 1 event-objs) (reduce conj new-event-objs))
-        new-model (assoc model :objects 
-                          #(for [old-obj %1 new-obj %2] 
-                             (if (= (old-obj :descriptor) (new-obj :descriptor))
-                               new-obj
-                               old-obj)) new-objs)]
+        new-model (update-objects model new-objs)]
     (if (empty? total-event-objs)
       new-model
       (recur new-model {} total-event-objs))))
@@ -144,11 +149,6 @@
    })
 
 (defn run [model]
-  ;; (let [event (get-event model)
-  ;;       new-model (apply-event model event (event :targets))]
-  ;;   (do
-  ;;     (pprint new-model)
-  ;;     (recur new-model))))
   (let [updated-model (update-model model)]
     (do
       (pprint updated-model)
