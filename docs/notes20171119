@@ -1,0 +1,12 @@
+model:
+    list of objects -> map of objects
+    list of events -> map of events
+    
+    keyword indicies are unique and used to refer to them universally
+
+refactor everything based on that
+    apply-events should consume event-ids and not event-objs
+        it can look up the event-objs from the ids
+
+also, inventory objects that are not in the top level of the model should be references
+    ex: player has hotdog, hotdog should be an ID referring to the hotdog object that the model owns
