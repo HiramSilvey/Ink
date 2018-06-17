@@ -90,33 +90,54 @@ function applyAction(action, item) {
   }
 }
 
+function json2obj(input){
+    let model = new Item();
+    for(var o of input){
+	let item = new Item();
+	for(var s of o.states){
+	    let state = new State(s.subtext);
+	    item.addState(s.name, state, s.start);
+	}
+	for(var t of o.transitions){
+	    let source = item.states[t.start];
+	    console.log("START",t.start,source);
+	    let target = item.states[t.end];
+	    console.log("END",t.end,target);
+	    let trans = new Transition(target);
+	    source.addTransition(t.name, trans);
+	}
+	model.addSubItem(o.name);
+    }
+    return model;
+}
+
 // example instantiation
-let model = new Item(); // the all-encompassing world
+// let model = new Item(); // the all-encompassing world
 
-let protagonist = new Item();
-let awake = new State("Basically the best.");
-let asleep = new State("Zzz...");
-awake.addTransition("filled", new Transition(asleep)); // filled action -> asleep state
-protagonist.addState("awake", awake, true); // start state
-protagonist.addState("asleep", asleep);
+// let protagonist = new Item();
+// let awake = new State("Basically the best.");
+// let asleep = new State("Zzz...");
+// awake.addTransition("filled", new Transition(asleep)); // filled action -> asleep state
+// protagonist.addState("awake", awake, true); // start state
+// protagonist.addState("asleep", asleep);
 
-let hotdog = new Item();
-let whole = new State("A nice, long stick of mystery meat.");
-let half = new State("Looks like a chunk has been bitten off...");
-let eat = new Transition(half);
-eat.addEvent(new Event("filled", scopes.default));
-whole.addTransition("eat", eat); // eat action -> half state, ate event (filled action)
-hotdog.addState("whole", whole, true); // start state
-hotdog.addState("half", half);
+// let hotdog = new Item();
+// let whole = new State("A nice, long stick of mystery meat.");
+// let half = new State("Looks like a chunk has been bitten off...");
+// let eat = new Transition(half);
+// eat.addEvent(new Event("filled", scopes.default));
+// whole.addTransition("eat", eat); // eat action -> half state, ate event (filled action)
+// hotdog.addState("whole", whole, true); // start state
+// hotdog.addState("half", half);
 
-model.addSubItem("protagonist", protagonist);
-model.addSubItem("hotdog", hotdog);
+// model.addSubItem("protagonist", protagonist);
+// model.addSubItem("hotdog", hotdog);
 
-console.log("BEFORE");
-console.log(model.toString());
+// console.log("BEFORE");
+// console.log(model.toString());
 
-applyAction("eat",hotdog);
+// applyAction("eat",hotdog);
 
 
-console.log("AFTER");
-console.log(model.toString());
+// console.log("AFTER");
+// console.log(model.toString());

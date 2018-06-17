@@ -29,7 +29,7 @@ sdl
     ;
     
 objects
-    : object "\n" objects
+    : object ";" objects
         { $$ = [$1].concat($3); }
     | object
 	{ $$ = [$1]; }
@@ -58,9 +58,9 @@ transitions
 
 transition
     : NAME ":" NAME ">" NAME ";"
-        { $$ = {"action":$1,"start":$3,"end":$5,"effects":[]]; }
+        { $$ = {"action":$1,"start":$3,"end":$5,"effects":[]}; }
     | NAME ":" NAME ">" NAME "[" effects "]" ";"
-        { $$ = {"action":$1,"start":$3,"end":$5,"effects":$7]; }
+        { $$ = {"action":$1,"start":$3,"end":$5,"effects":$7}; }
     ;
 
 effects
@@ -74,5 +74,5 @@ state
     : NAME "*" ":" STR ";"
         { $$ = {"name":$1,"subtext":$4,"start":true}; }
     | NAME ":" STR ";"
-        { $$ = {"name":$1,"subtext":$3,"start":false]; }
+        { $$ = {"name":$1,"subtext":$3,"start":false}; }
     ;
