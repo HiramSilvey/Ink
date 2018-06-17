@@ -27,11 +27,11 @@ function Transition(nextState) {
 }
 
 // Scopes are functions that dynamically determine which items are affected by an event action
-function Scope() {
+let scopes = {
   // default: all neighboring items (same parent item)
-  this.default = function(item) {
+  default: function(item) {
     return item.parentItem.subItems;
-  };
+  }
 }
 
 // Events apply actions to items defined by the scope
@@ -77,3 +77,27 @@ function applyAction(action, item) {
     }
   }
 }
+
+// example instantiation
+let model = new Item(); // the all-encompassing world
+
+let protagonist = new Item();
+let awake = new State("Basically the best.");
+let asleep = new State("Zzz...");
+let filled = new Transition(asleep);
+awake.addTransition("filled", filled); // filled action -> asleep state
+protagonist.addState("awake", awake, true); // start state
+protagonist.addState("asleep", asleep);
+
+let hotdog = new Item();
+let whole = new State("A nice, long stick of mystery meat.");
+let half = new State("Looks like a chunk has been bitten off...");
+let eat = new Transition(half);
+let ate = new Event("filled", scopes.default);
+eat.addEvent(ate);
+whole.addTransition("eat", eat); // eat action -> half state, ate event
+hotdog.addState("whole", whole, true); // start state
+hotdog.addState("half", half);
+
+model.addSubItem("protagonist", protagonist);
+model.addSubItem("hotdog", hotdog);
