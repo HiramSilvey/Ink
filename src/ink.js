@@ -84,7 +84,7 @@ function applyAction(action, item) {
     let affectedItems = event.scope(item);
     for (var affectedItemTypes of Object.values(affectedItems)) {
       for(var affectedItem of affectedItemTypes){
-        applyAction(event.action, affectedItem);
+				applyAction(event.action, affectedItem);
       }
     }
   }
@@ -116,6 +116,7 @@ console.log("BEFORE");
 console.log(model.toString());
 
 applyAction("eat",hotdog);
+
 
 console.log("AFTER");
 console.log(model.toString());

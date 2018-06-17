@@ -31,4 +31,9 @@
   [s halfeaten "regrets"]
   [t eat ready > halfeaten [full]]))
 
+(defo hotdog []
+  [s* ready "looks bad"]
+  [s halfeaten "regrets"]
+  [t eat ready > halfeaten [full]])
+
 hotdog

@@ -12,7 +12,7 @@
 ;; of the state that we should be in when we receive a "1" input in
 ;; the state1 state.
 ;;
-;; :start is the ID of the starting state
+;; :current is the ID of the starting state
 
 (def example-dfa {
                   :state {
@@ -21,7 +21,7 @@
                   :transition {
                                :A { 0 :A 1 :B }
                                :B { 0 :A 1 :B }}
-                  :start :A
+                  :current :A
                   })
 
 
@@ -32,18 +32,18 @@
                   :transition {
                                :A { 0 :B 1 :A }
                                :B { 0 :B 1 :B }}
-                  :start :A
+                  :current :A
                   })
 
 (def counter-sm {
                  :state (fn [state] {:description (cond (> state 0) (str "Health " state) :else "Dead")})
                  :transition (fn [state] (fn [input] (cond (<= state 1) 0 (= input 1) (+ state 1) :else (- state 1))))
-                 :start 5
+                 :current 5
                  })
 
 (defn sm-step [dfa] (fn [state] (fn [input] (try (or (((dfa :transition) state) input) state) (catch Exception e state)))))
 
-(defn sm-run [dfa & inputs] (reduce #(((sm-step dfa) %1) %2) (dfa :start) inputs))
+(defn sm-run [dfa & inputs] (reduce #(((sm-step dfa) %1) %2) (dfa :current) inputs))
 
 ;; Takes a list of functions [f1 f2 f3 ...] and returns a function
 ;; which takes input
@@ -76,13 +76,13 @@
 ;;
 ;; ((apply juxt (fn-product (t1 t2 ...)) s) x)
 ;;
-;; Of course, the :start value of the product will simply be a vector
+;; Of course, the :current value of the product will simply be a vector
 ;; consisting of the start values of all the input state machines.
 
 (defn sm-product [sms] {
                         :state (fn-product (map #(% :state) sms))
                         :transition #(apply juxt ((fn-product (map sm-step sms)) %))
-                        :start (vec (map #(% :start) sms))
+                        :current (vec (map #(% :current) sms))
   })
 
 (def pdfa (sm-product (list example-dfa another-dfa)))

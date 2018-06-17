@@ -4,9 +4,13 @@
 
 (defn sm-step [dfa] (fn [state] (fn [input] (try (or (((dfa :transition) state) input) state) (catch Exception e state)))))
 
+;; (defn get-cmd []
+;;   (apply hash-map
+;;          (interleave '(:verb :object) (str/split (str/trim (read-line)) #" +" 2))))
+
 (defn get-cmd []
   (apply hash-map
-         (interleave '(:verb :object) (str/split (str/trim (read-line)) #" +" 2))))
+         (interleave '(:verb :object) (str/split (str/trim "eat hotdog") #" +" 2))))
 
 (defn parse-event [model]
   (let [cmd   (get-cmd)
@@ -29,7 +33,7 @@
 (defn apply-event [model action target]
   (try
     (let [current-state    ((target :state-machine) :current)
-          results          ((((target :state-machine) :transitions) current-state) action)
+          results          ((((target :state-machine) :transition) current-state) action)
           new-state        (results :target)
           new-event-objs   (results :events)]
       [(update target :state-machine assoc :current new-state) new-event-objs])
@@ -46,14 +50,15 @@
                                                      (recur (conj acc x) (rest to-add)))))))) ; else add it to the array
 
 
-(defn apply-events [model cmd event-objs]
-  (let [event-obj                   (first event-objs)
+(defn apply-events [model cmd event-ids]
+  (let [event-obj                   ((model :events) (first event-ids))
         event                       (get-event model cmd event-obj)
         action                      (event :action)
         targets                     (event :targets)
         results                     (map (partial apply-event model action) targets)
         [new-objs new-event-objs]   (apply mapv vector results)
         total-event-objs            (concat (drop 1 event-objs) (reduce conj new-event-objs))
+        y (println "asda" new-event-objs)
         new-model                   (update-objects model new-objs)]
     (if (empty? total-event-objs)
       new-model
@@ -124,7 +129,7 @@
   {
    :player player-obj
    :objects [hotdog player-obj]
-   :events [evt1 evt2]
+   :events {:eat evt1 :full evt2}
    })
 
 
