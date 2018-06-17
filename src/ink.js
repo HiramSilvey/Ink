@@ -6,24 +6,28 @@
  */
 
 // States represent the current status of an item
-function State(subtext) {
-  this.subtext = subtext;
-  this.transitions = {};
+class State {
+  constructor(subtext) {
+    this.subtext = subtext;
+    this.transitions = {};
+  }
 
-  this.addTransition = function(action, transition) {
+  addTransition(action, transition) {
     this.transitions[action] = transition;
-  };
+  }
 }
 
 // Transitions represent a change in state of an item
 // Events are applied when a transition occurs
-function Transition(nextState) {
-  this.nextState = nextState;
-  this.events = [];
+class Transition {
+  constructor(nextState) {
+    this.nextState = nextState;
+    this.events = [];
+  }
 
-  this.addEvent = function(event) {
+  addEvent(event) {
     this.events.push(event);
-  };
+  }
 }
 
 // Scopes are functions that dynamically determine which items are affected by an event action
@@ -35,44 +39,48 @@ let scopes = {
 }
 
 // Events apply actions to items defined by the scope
-function Event(action, scope) {
-  this.action = action;
-  this.scope = scope;
+class Event {
+  constructor(action, scope) {
+    this.action = action;
+    this.scope = scope;
+  }
 }
 
 // Items are every contained piece of information
 // Example items: protagonist, sword, box, lightswitch, room, house
-function Item(descriptor) {
-  this.descriptor = descriptor;
-  this.states = {};
-  this.currentState = null;
-  this.parentItem = null;
-  this.subItems = {};
+class Item {
+  constructor(descriptor) {
+    this.descriptor = descriptor;
+    this.states = {};
+    this.currentState = null;
+    this.parentItem = null;
+    this.subItems = {};
+  }
 
-  this.addState = function(descriptor, state, start) {
+  addState(descriptor, state, start) {
     this.states[descriptor] = state;
     if (start) { this.currentState = state; }
-  };
+  }
 
-  this.addSubItem = function(item) {
+  addSubItem(item) {
     item.parentItem = this;
     if (this.subItems.hasOwnProperty(item.descriptor)) {
       this.subItems[item.descriptor].push(item);
     } else {
       this.subItems[item.descriptor] = [item];
     }
-  };
+  }
 
-  this.removeSubItem = function(item) {
+  removeSubItem(item) {
     let subItemType = this.subItems[item.descriptor];
     let index = subItemType.indexOf(item);
     if (index != -1) {
       subItemType.splice(index, 1);
-      if (!subItemType.length) delete subItemType;
+      if (!subItemType.length) delete this.subItems[item.descriptor];
     }
   }
 
-  this.toString = function() {
+  toString() {
     let ans = "";
     if (this.currentState) ans += "state: " + this.currentState.subtext + "\n";
     for(var descriptor in this.subItems){
@@ -81,9 +89,10 @@ function Item(descriptor) {
       }
     }
     return ans;
-  };
+  }
 }
 
+// Moves item from current parent to new parent
 function moveItem(item, newParentItem) {
   item.parentItem.removeSubItem(item);
   newParentItem.addSubItem(item);
@@ -106,24 +115,24 @@ function applyAction(action, item) {
 }
 
 function json2obj(input){
-    let model = new Item();
-    for(var o of input){
-	let item = new Item();
-	for(var s of o.states){
-	    let state = new State(s.subtext);
-	    item.addState(s.name, state, s.start);
-	}
-	for(var t of o.transitions){
-	    let source = item.states[t.start];
-	    console.log("START",t.start,source);
-	    let target = item.states[t.end];
-	    console.log("END",t.end,target);
-	    let trans = new Transition(target);
-	    source.addTransition(t.name, trans);
-	}
-	model.addSubItem(o.name);
+  let model = new Item();
+  for(var o of input){
+    let item = new Item();
+    for(var s of o.states){
+      let state = new State(s.subtext);
+      item.addState(s.name, state, s.start);
     }
-    return model;
+    for(var t of o.transitions){
+      let source = item.states[t.start];
+      console.log("START",t.start,source);
+      let target = item.states[t.end];
+      console.log("END",t.end,target);
+      let trans = new Transition(target);
+      source.addTransition(t.name, trans);
+    }
+    model.addSubItem(o.name);
+  }
+  return model;
 }
 
 // example instantiation
