@@ -102,10 +102,10 @@ case 6: case 8:
  this.$ = [$$[$0-1]].concat($$[$0]); 
 break;
 case 10:
- this.$ = {"action":$$[$0-5],"start":$$[$0-3],"end":$$[$0-1],"effects":[]}; 
+ this.$ = {"name":$$[$0-5],"start":$$[$0-3],"end":$$[$0-1],"effects":[]}; 
 break;
 case 11:
- this.$ = {"action":$$[$0-8],"start":$$[$0-6],"end":$$[$0-4],"effects":$$[$0-2]}; 
+ this.$ = {"name":$$[$0-8],"start":$$[$0-6],"end":$$[$0-4],"effects":$$[$0-2]}; 
 break;
 case 14:
  this.$ = {"name":$$[$0-4],"subtext":$$[$0-1],"start":true}; 

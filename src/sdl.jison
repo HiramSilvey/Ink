@@ -58,9 +58,9 @@ transitions
 
 transition
     : NAME ":" NAME ">" NAME ";"
-        { $$ = {"action":$1,"start":$3,"end":$5,"effects":[]}; }
+        { $$ = {"name":$1,"start":$3,"end":$5,"effects":[]}; }
     | NAME ":" NAME ">" NAME "[" effects "]" ";"
-        { $$ = {"action":$1,"start":$3,"end":$5,"effects":$7}; }
+        { $$ = {"name":$1,"start":$3,"end":$5,"effects":$7}; }
     ;
 
 effects
