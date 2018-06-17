@@ -18,6 +18,7 @@ hotdog {
 }`));
 
 hotdog = model.subItems["hotdog"][0];
+//console.log(hotdog);
 
 console.log("BEFORE");
 console.log(model.toString());
