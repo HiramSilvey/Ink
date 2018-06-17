@@ -42,7 +42,8 @@ function Event(action, scope) {
 
 // Items are every contained piece of information
 // Example items: protagonist, sword, box, lightswitch, room, house
-function Item() {
+function Item(descriptor) {
+  this.descriptor = descriptor;
   this.states = {};
   this.currentState = null;
   this.parentItem = null;
@@ -53,14 +54,23 @@ function Item() {
     if (start) { this.currentState = state; }
   };
 
-  this.addSubItem = function(descriptor, item) {
+  this.addSubItem = function(item) {
     item.parentItem = this;
-    if (this.subItems.hasOwnProperty(descriptor)) {
-      this.subItems[descriptor].push(item);
+    if (this.subItems.hasOwnProperty(item.descriptor)) {
+      this.subItems[item.descriptor].push(item);
     } else {
-      this.subItems[descriptor] = [item];
+      this.subItems[item.descriptor] = [item];
     }
   };
+
+  this.removeSubItem = function(item) {
+    let subItemType = this.subItems[item.descriptor];
+    let index = subItemType.indexOf(item);
+    if (index != -1) {
+      subItemType.splice(index, 1);
+      if (!subItemType.length) delete subItemType;
+    }
+  }
 
   this.toString = function() {
     let ans = "";
@@ -74,6 +84,11 @@ function Item() {
   };
 }
 
+function moveItem(item, newParentItem) {
+  item.parentItem.removeSubItem(item);
+  newParentItem.addSubItem(item);
+}
+
 // Applies an action to an item, triggering events recursively
 // Item states are updated before recursing, simulating the order dictated by time
 function applyAction(action, item) {
@@ -83,7 +98,7 @@ function applyAction(action, item) {
   for (var event of transition.events) {
     let affectedItems = event.scope(item);
     for (var affectedItemTypes of Object.values(affectedItems)) {
-      for(var affectedItem of affectedItemTypes){
+      for(var affectedItem of affectedItemTypes) {
         applyAction(event.action, affectedItem);
       }
     }
@@ -91,16 +106,16 @@ function applyAction(action, item) {
 }
 
 // example instantiation
-let model = new Item(); // the all-encompassing world
+let model = new Item(""); // the all-encompassing world
 
-let protagonist = new Item();
+let protagonist = new Item("protagonist");
 let awake = new State("Basically the best.");
 let asleep = new State("Zzz...");
 awake.addTransition("filled", new Transition(asleep)); // filled action -> asleep state
 protagonist.addState("awake", awake, true); // start state
 protagonist.addState("asleep", asleep);
 
-let hotdog = new Item();
+let hotdog = new Item("hotdog");
 let whole = new State("A nice, long stick of mystery meat.");
 let half = new State("Looks like a chunk has been bitten off...");
 let eat = new Transition(half);
@@ -109,8 +124,8 @@ whole.addTransition("eat", eat); // eat action -> half state, ate event (filled 
 hotdog.addState("whole", whole, true); // start state
 hotdog.addState("half", half);
 
-model.addSubItem("protagonist", protagonist);
-model.addSubItem("hotdog", hotdog);
+model.addSubItem(protagonist);
+model.addSubItem(hotdog);
 
 console.log("BEFORE");
 console.log(model.toString());
