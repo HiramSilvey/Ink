@@ -42,7 +42,8 @@ function Event(action, scope) {
 
 // Items are every contained piece of information
 // Example items: protagonist, sword, box, lightswitch, room, house
-function Item() {
+function Item(descriptor) {
+    this.descriptor = descriptor;
     this.states = {};
     this.currentState = null;
     this.parentItem = null;
@@ -53,14 +54,23 @@ function Item() {
 	if (start) { this.currentState = state; }
     };
 
-    this.addSubItem = function(descriptor, item) {
+    this.addSubItem = function(item) {
 	item.parentItem = this;
-	if (this.subItems.hasOwnProperty(descriptor)) {
-	    this.subItems[descriptor].push(item);
+	if (this.subItems.hasOwnProperty(item.descriptor)) {
+	    this.subItems[item.descriptor].push(item);
 	} else {
-	    this.subItems[descriptor] = [item];
+	    this.subItems[item.descriptor] = [item];
 	}
     };
+
+    this.removeSubItem = function(item) {
+	let subItemType = this.subItems[item.descriptor];
+	let index = subItemType.indexOf(item);
+	if (index != -1) {
+	    subItemType.splice(index, 1);
+	    if (!subItemType.length) delete subItemType;
+	}
+    }
 
     this.toString = function() {
 	let ans = "";
@@ -72,6 +82,11 @@ function Item() {
 	}
 	return ans;
     };
+}
+
+function moveItem(item, newParentItem) {
+  item.parentItem.removeSubItem(item);
+  newParentItem.addSubItem(item);
 }
 
 // Applies an action to an item, triggering events recursively
@@ -93,7 +108,7 @@ function applyAction(action, item) {
 function json2obj(input){
     let model = new Item();
     for(var o of input){
-	let item = new Item();
+	let item = new Item(o.name);
 	for(var s of o.states){
 	    let state = new State(s.subtext);
 	    item.addState(s.name, state, s.start);
@@ -107,7 +122,7 @@ function json2obj(input){
 	    }
 	    source.addTransition(t.name, trans);
 	}
-	model.addSubItem(o.name, item);
+	model.addSubItem(item);
     }
     return model;
 }
