@@ -36,12 +36,12 @@ objects
     ;
 
 object
-    : NAME "{" states '|' transitions '|' "[" ids "]" ";" "}"
-        { $$ = {"name":$1,"states":$3,"transitions":$5,"ids":$8}; }
+    : NAME "{" states '|' transitions '|' "[" subItems "]" ";" "}"
+        { $$ = {"name":$1,"states":$3,"transitions":$5,"subItems":$8}; }
     | NAME "{" states '|' transitions "}"
         { $$ = {"name":$1,"states":$3,"transitions":$5}; }
-    | NAME "{" states '|' "[" ids "]" ";" "}"
-        { $$ = {"name":$1,"states":$3,"ids":$6}; }
+    | NAME "{" states '|' "[" subItems "]" ";" "}"
+        { $$ = {"name":$1,"states":$3,"subItems":$6}; }
     | NAME "{" states "}"
         { $$ = {"name":$1,"states":$3}; }
     ;
@@ -62,17 +62,31 @@ transitions
 
 transition
     : NAME ":" NAME ">" NAME ";"
-        { $$ = {"name":$1,"start":$3,"end":$5,"ids":[]}; }
-    | NAME ":" NAME ">" NAME "[" ids "]" ";"
-        { $$ = {"name":$1,"start":$3,"end":$5,"ids":$7}; }
+        { $$ = {"name":$1,"start":$3,"end":$5,"effects":[]}; }
+    | NAME ":" NAME ">" NAME "[" effects "]" ";"
+        { $$ = {"name":$1,"start":$3,"end":$5,"effects":$7}; }
     ;
 
-ids
+subItems
     : NAME
         { $$ = [$1]; }
-    | NAME "," ids
+    | NAME "," subItems
         { $$ = [$1].concat($3); }
     ;
+
+effects
+    : effect
+        { $$ = [$1]; }
+    | effect "," effects
+        { $$ = [$1].concat($3); }
+    ;
+
+effect
+  : NAME
+      { $$ = $1; }
+  | NAME ">" NAME
+      { $$ = {"item":$1,"newParent":$3}; }
+  ;
 
 state
     : NAME "*" ":" STR ";"
