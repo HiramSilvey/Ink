@@ -5,6 +5,14 @@
  *            |-> events
  */
 
+// Actions represent doing something [to something else]
+class Action {
+  constructor(verb, ...args) {
+    this.verb = verb;
+    this.args = args;
+  }
+}
+
 // States represent the current status of an item
 class State {
   constructor(subtext) {
@@ -115,6 +123,7 @@ function applyAction(action, item) {
 }
 
 function json2obj(input){
+  console.log(input);
   let model = new Item();
   for(var o of input){
     let item = new Item(o.name);

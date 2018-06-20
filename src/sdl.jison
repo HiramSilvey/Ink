@@ -36,8 +36,12 @@ objects
     ;
 
 object
-    : NAME "{" states '|' transitions "}"
+    : NAME "{" states '|' transitions '|' "[" ids "]" ";" "}"
+        { $$ = {"name":$1,"states":$3,"transitions":$5,"ids":$8}; }
+    | NAME "{" states '|' transitions "}"
         { $$ = {"name":$1,"states":$3,"transitions":$5}; }
+    | NAME "{" states '|' "[" ids "]" ";" "}"
+        { $$ = {"name":$1,"states":$3,"ids":$6}; }
     | NAME "{" states "}"
         { $$ = {"name":$1,"states":$3}; }
     ;
@@ -58,15 +62,15 @@ transitions
 
 transition
     : NAME ":" NAME ">" NAME ";"
-        { $$ = {"name":$1,"start":$3,"end":$5,"effects":[]}; }
-    | NAME ":" NAME ">" NAME "[" effects "]" ";"
-        { $$ = {"name":$1,"start":$3,"end":$5,"effects":$7}; }
+        { $$ = {"name":$1,"start":$3,"end":$5,"ids":[]}; }
+    | NAME ":" NAME ">" NAME "[" ids "]" ";"
+        { $$ = {"name":$1,"start":$3,"end":$5,"ids":$7}; }
     ;
 
-effects
+ids
     : NAME
         { $$ = [$1]; }
-    | NAME "," effects
+    | NAME "," ids
         { $$ = [$1].concat($3); }
     ;
 
