@@ -123,7 +123,6 @@ function applyAction(action, item) {
 }
 
 function json2obj(input){
-  console.log(input);
   let model = new Item();
   for(var o of input){
     let item = new Item(o.name);
