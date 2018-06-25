@@ -17,7 +17,7 @@ kitchen {
 
 toKitchen {
   closed*: "A wooden door with a strange smell coming from behind it...";
-  open: "The smell thickens."
+  open: "The smell thickens.";
   |
   openKitchen: closed > open [openBedroom];
   go: open > open [protagonist > kitchen];
