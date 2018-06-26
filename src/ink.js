@@ -7,9 +7,35 @@
 
 // Actions represent doing something [to something else]
 class Action {
-  constructor(verb, ...args) {
-    this.verb = verb;
-    this.args = args;
+  constructor(query, transform) {
+    this.query = query;
+    this.transform = transform;
+  }
+
+  execute() {
+    this.transform.execute(this.query.execute());
+  }
+}
+
+class Query {
+  constructor(qstruct) {
+    this.qstruct = qstruct;
+  }
+
+  execute() {
+    pass; // TODO, return list of items
+  }
+}
+
+class Transform {
+  constructor(tstruct) {
+    this.tstruct = tstruct;
+  }
+
+  execute(items) {
+    for (item of items) {
+
+    }
   }
 }
 
