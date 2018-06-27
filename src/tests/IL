@@ -1,0 +1,5 @@
+move(protagonist, kitchen) =
+hasSubItem
+
+["remove", ["hasDescriptor", "protagonist"], ["hasChild", "protagonist"]]
+["add", ["hasDescriptor", "protagonist"], ["hasDescriptor", "kitchen"]]

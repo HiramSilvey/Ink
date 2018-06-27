@@ -17,16 +17,29 @@ class Action {
   }
 }
 
+/*
+hasSubItem
+hasDescriptor
+isState
+and
+or
+*/
 class Query {
   constructor(qstruct) {
     this.qstruct = qstruct;
   }
 
-  execute() {
-    pass; // TODO, return list of items
+  execute(model) {
+    items = [];
+    if 
   }
 }
 
+/*
+move
+transition
+and
+*/
 class Transform {
   constructor(tstruct) {
     this.tstruct = tstruct;
@@ -34,7 +47,7 @@ class Transform {
 
   execute(items) {
     for (item of items) {
-
+      
     }
   }
 }
