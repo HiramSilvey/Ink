@@ -100,6 +100,147 @@ class Item {
   }
 }
 
+class Query {
+    // Example: spec = ["and", []]
+    constuctor(spec) {
+	this.spec = spec;
+	this.functions = {"and":{"impl":this.and,"args":"query"},
+			  "or":{"impl":this.or,"args":"query"},
+			  "not",{"impl":this.not,"args":"query"},
+			  "hasName":{"impl":this.hasName,"args":"data"},
+			  "hasChild":{"impl":this.hasChild,"args":"query"},
+			  "stateIs":{"impl":this.stateIs,"args":"data"}}
+	this.context = null;
+    }
+    execute(context, globalArgs, root){
+	root = root || this.spec;
+	var fn = root[0];
+	if(! fn in this.functions){
+	    console.log(`Invalid query function: {fn}`);
+	    return [];
+	}
+	fn = this.functions[fn];
+	var args = [];
+	if(fn.args == "query"){
+	    for(var q of root[1]){
+		args.push(this.execute(context, globalArgs, q));
+	    }
+	}
+	else{
+	    for(var arg of root[1].slice()){
+		if(arg[0] == "$") args.push(globalArgs[arg.substring(1)] || arg);
+		else args.push(arg);
+	    }
+	}
+	return fn.impl(context, args);
+    }
+    and(context, args){
+	// args = [ query0, query1, ... ]
+	// ans = intersection(query0, query1, ...)
+	var elts = args[0];
+	var ans = [];
+	for(var e of elts){
+	    for(var l of args.slice(1)){
+		if(ans.includes(e)) continue;
+		if(l.includes(e)) ans.push(e);
+	    }
+	}
+	return ans;
+    }
+    or(context, args){
+	// args = [ query0, query1, ... ]
+	// ans = union(query0, query1, ...)
+	var ans = [];
+	for(var l of args){
+	    for(var e of l){
+		if(ans.includes(e)) continue;
+		else ans.push(e);
+	    }
+	}
+	return ans;
+    }
+    not(context, args) {
+	// args = [ query0 ]
+	var ans = context.slice();
+	for(var e of args[0]){
+	    let idx = ans.indexOf(e)
+	    if(idx != -1) ans.splice(idx,1);
+	}
+	return ans
+    }
+    hasName(context, args) {
+	// args = [ name_str ]
+	var ans = [];
+	for(var item of context){
+	    if(item.descriptor == args[0]) ans.push(item);
+	}
+    }
+    hasChild(context, args) {
+	// args = [ query0 ]
+	var ans = [];
+	for(var item of args[0]){
+	    for(var subItem of item.subItems){
+		if(subItem.descriptor == args[0]){
+		    ans.push(item);
+		    break;
+		}
+	    }
+	}
+    }
+    stateIs(context, args) {
+	// args = [ name_str ]
+	var ans = [];
+	for(var item of context){
+	    if(item.currentState.descriptor == args[0]) ans.push(item);
+	}
+    }
+}
+
+class Transform {
+    constructor(condition, transition, adds, removes, params){
+	this.contidion = condition; // query
+	this.transition = transition; // { of: query, what: transition_name }
+	this.adds = adds; // [ {to: query, what: query}, ...]
+	this.removes = removes; // [ {from: query, what: query}, ...]
+	this.params = params; // [ param1, param2, ... ]
+    }
+    run(context, args) {
+	// Narrow the context using the condition query
+	context = this.condition.execute(context, args);
+	var transitioning = []
+	var add = [];
+	var remove = [];
+	transitioning = this.transition.of.execute(context, args);
+	for(var a of this.adds){
+	    add.push({"to":a.to.execute(context, args),"what":a.what.execute(context, args)});
+	}
+	for(var r of this.removes){
+	    remove.push({"from":r.from.execute(context, args),"what":r.what.execute(context, args)});
+	}
+	// Now:
+	// - add is a list of additions to make
+	// - remove is a list of removals to make
+	// - transitioning is a list of things to transition
+	for(var a of add){
+	    for(var owner of a.to){
+		for(var item of a.what){
+		    owner.addSubItem(item);
+		}
+	    }
+	}
+	for(var r of remove){
+	    for(var owner of r.from){
+		for(var item of r.what){
+		    owner.removeSubItem(item);
+		}
+	    }
+	}
+	for(var item of transitioning){
+	    applyAction(this.transition.what, item);
+	}
+    }
+}
+
 // Moves item from current parent to new parent
 function moveItem(item, newParentItem) {
   item.parentItem.removeSubItem(item);
@@ -143,3 +284,5 @@ function json2obj(input){
   }
   return model;
 }
+
+
