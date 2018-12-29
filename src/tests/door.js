@@ -44,3 +44,35 @@ hotdog {
   |
   eat: whole > halved [fill];
 }`));
+
+/* - there is an object that is
+     - child of $src
+     - child of $dst
+     - state open
+   - actor is a child of src
+   - actor is not a child of dst
+*/
+
+let move = Transform(/* condition */ ["and",
+				      ["and",[
+					  ["hasParent",["hasChild","$obj"]],
+					  ["stateIs",["open"]]]],
+				      ["and",[
+					  ["hasName",["$src"]],
+					  ["hasChild",["$obj"]]]],
+				      ["not",[
+					  "and",[
+					      ["hasName",["$dst"]],
+					      ["hasChild",["$obj"]]]]]
+				     ],
+    /* transition */ null,
+    /* adds */ [
+	{"to":["hasName",["$dst"]],
+	 "what":["hasName",["$obj"]]}
+    ],
+    /* removes */ [
+	{"from":["hasName",["$src"]],
+	 "what":["hasName",["$obj"]]}
+    ],
+    /* params */ ["actor","obj","src","dst"]);
+

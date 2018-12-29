@@ -106,7 +106,7 @@ class Query {
 	this.spec = spec;
 	this.functions = {"and":{"impl":this.and,"args":"query"},
 			  "or":{"impl":this.or,"args":"query"},
-			  "not",{"impl":this.not,"args":"query"},
+			  "not":{"impl":this.not,"args":"query"},
 			  "hasName":{"impl":this.hasName,"args":"data"},
 			  "hasChild":{"impl":this.hasChild,"args":"query"},
 			  "stateIs":{"impl":this.stateIs,"args":"data"}}
@@ -198,7 +198,7 @@ class Query {
 
 class Transform {
     constructor(condition, transition, adds, removes, params){
-	this.contidion = condition; // query
+	this.condition = condition; // query
 	this.transition = transition; // { of: query, what: transition_name }
 	this.adds = adds; // [ {to: query, what: query}, ...]
 	this.removes = removes; // [ {from: query, what: query}, ...]
@@ -206,37 +206,41 @@ class Transform {
     }
     run(context, args) {
 	// Narrow the context using the condition query
-	context = this.condition.execute(context, args);
+	if(this.condition) context = this.condition.execute(context, args);
 	var transitioning = []
 	var add = [];
 	var remove = [];
-	transitioning = this.transition.of.execute(context, args);
-	for(var a of this.adds){
-	    add.push({"to":a.to.execute(context, args),"what":a.what.execute(context, args)});
+	if(this.transition) transitioning = this.transition.of.execute(context, args);
+	if(this.adds){
+	    for(var a of this.adds){
+		add.push({"to":a.to.execute(context, args),"what":a.what.execute(context, args)});
+	    }
 	}
-	for(var r of this.removes){
-	    remove.push({"from":r.from.execute(context, args),"what":r.what.execute(context, args)});
+	if(this.removes) {
+	    for(var r of this.removes){
+		remove.push({"from":r.from.execute(context, args),"what":r.what.execute(context, args)});
+	    }
 	}
 	// Now:
 	// - add is a list of additions to make
 	// - remove is a list of removals to make
 	// - transitioning is a list of things to transition
-	for(var a of add){
-	    for(var owner of a.to){
-		for(var item of a.what){
-		    owner.addSubItem(item);
-		}
-	    }
+	if(this.adds){
+	    for(var a of add)
+		for(var owner of a.to)
+		    for(var item of a.what)
+			owner.addSubItem(item);
 	}
-	for(var r of remove){
-	    for(var owner of r.from){
-		for(var item of r.what){
-		    owner.removeSubItem(item);
-		}
-	    }
+	if(this.removes){
+	    for(var r of remove)
+		for(var owner of r.from)
+		    for(var item of r.what)
+			owner.removeSubItem(item);
 	}
-	for(var item of transitioning){
-	    applyAction(this.transition.what, item);
+	if(this.transition){
+	    for(var item of transitioning){
+		applyAction(this.transition.what, item);
+	    }
 	}
     }
 }
