@@ -31,3 +31,20 @@ Destroy (extend Effect):
   Item item // Item to destroy. Item has a reference to its parent, so it can
             // be easily removed from that inventory.
   Execute(Item actor) // What is destroying the item.
+
+Actions are not explicitely a class, but exist as a concept and will live in
+function logic. Actions have an actor, verb, and direct object. For example,
+moving a bird into the player's inventory would have the action:
+  actor: Query for 'bird'
+  verb: 'go'
+  direct object: Query for 'player'
+The actor and direct object fields of an action are queries, which allow for
+flexibility and runtime validation. As the universe is a series of state
+machines, the engine moves forward in 'steps.' A single step of the engine is
+roughly as follows:
+Step 1. Parse text into action.
+Step 2. Resolve action queries.
+Step 3. Validate action fields and map action to a specific transition.
+Step 4. Execute transition.
+Step 5. Execute transition effects in a breadth first manner. (Possible future
+research in having effect priority and executing based on a priority queue.)
