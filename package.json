@@ -22,5 +22,8 @@
   "homepage": "https://github.com/hiram-silvey/ink#readme",
   "devDependencies": {
     "jison": "^0.4.18"
+  },
+  "dependencies": {
+    "eslint": "^5.0.1"
   }
 }
