@@ -4,33 +4,36 @@ State:
   Map transitions // { 'open' : Transition open, 'close' : Transition close }
 
 Item:
+  String name
   State current_state
   Set inventory // All items are unique; duplicates have separate IDs.
   Item parent // The item that contains this item.
 
 Effect (interface):
-  Execute(Item actor) // What is doing it.
+  Boolean protected // If true, this effect cannot be directly initiated by
+                    // the player.
+  Fn Execute(Item actor) // What is doing it.
 
 Transition (extend Effect):
   String description // 'The light turns on.'
   State next_state
   List effects // List of Effects to apply after transitioning.
-  Execute(Item actor) // What is causing the transition.
+  Fn Execute(Item actor) // What is causing the transition.
 
 Move (extend Effect):
   Item destination // To where the item will be moved.
-  Execute(Item actor) // Item to move. Item has a reference to its parent,
+  Fn Execute(Item actor) // Item to move. Item has a reference to its parent,
                       // so it can be easily removed from that inventory.
 
 Create (extend Effect):
   Item item // Item to create.
   Item destination // Where the item will exist after creation.
-  Execute(Item actor) // What is creating the item.
+  Fn Execute(Item actor) // What is creating the item.
 
 Destroy (extend Effect):
   Item item // Item to destroy. Item has a reference to its parent, so it can
             // be easily removed from that inventory.
-  Execute(Item actor) // What is destroying the item.
+  Fn Execute(Item actor) // What is destroying the item.
 
 Actions are not explicitely a class, but exist as a concept and will live in
 function logic. Actions have an actor, verb, and direct object. For example,
