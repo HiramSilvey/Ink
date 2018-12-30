@@ -52,24 +52,6 @@ class Transition {
     }    
 }
 
-// class Move {
-//     constructor(obj, src, dst){
-	
-//     }
-// }
-
-// class Create {
-//     constructor(obj){
-
-//     }
-// }
-
-// class Delete {
-//     constructor(query){
-	
-//     }
-// }
-
 // Items are every contained piece of information
 class Item {
     constructor(descriptor, states, start, parent, children) {
@@ -264,19 +246,53 @@ function getActionQuery(verb){
     }
 }
 
-// returns effects
-function exec(subject, verb, object){
-    // Parse
-    // (We're pretending already parsed into SVO)
-    
-    // Template
-    let aq = getActionQuery(verb);
+function exec(s, v, o){
+    var actions = [[s, v, o]];
 
-    // Resolve objects
-    let action = aq.realise(model, subject, object);
-
-    // Do transition
-    return action.execute(model);
+    while(actions.length > 0){
+	var next_actions = [];
+	for(var a of actions){
+	    let subject = a[0];
+	    let verb = a[1];
+	    let object = a[2];
+	    // Parse
+	    // (We're pretending already parsed into SVO)
+	    
+	    // Template
+	    let aq = getActionQuery(verb);
+	    
+	    // Resolve objects
+	    let action = aq.realise(model, subject, object);
+	    
+	    // Do transition
+	    let effects = action.execute(model);
+	    
+	    for(var e of effects) {
+		if(e.type == 'action') { // Queue follow-on actions for the next round
+		    let args = {"$subject":action.subject};
+		    next_actions.push([action.subject, e.verb, e.obj]); // This is wrong--Are we running loop on svo strings or resolved values
+		}
+		else if(e.type == 'move') { // Execute any moves immediately
+		    let args = {"$subject":action.subject};
+		    let src = e.src.execute(model, args);
+		    let dst = e.dst.execute(model, args);
+		    let obj = e.obj.execute(model, args);
+		    if(!src.hasSubItem(obj)) throw obj.toString() + " is not in " + src.toString();
+		    src.removeSubItem(obj);
+		    dst.addSubItem(obj);
+		}
+		else if(e.type == 'destroy') { // Execute any destroys immediately
+		    let args = {"$subject":action.subject};
+		    let obj = e.obj.execute(model, args);
+		    obj.parent.removeSubItem(obj);
+		}
+		else if(e.type == 'create') { // Execute any creates immediately
+		    let args = {"$subject":action.subject};
+		    let obj = e.obj.execute(model, args);
+		    obj.parent.addSubItem(obj);
+		}
+	    }
+	}
+	actions = next_actions;
+    }
 }
-
-function run
