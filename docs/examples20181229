@@ -4,32 +4,46 @@ Example 1: 'eat hotdog'
 // definition.
 room {
   // '*' indicates the starting state. 'default' is the name of the state. 'a
-  // normal room' is the description of the state. '[]' contains the state's
-  // transitions.
-  *default: 'a normal room' [];
+  // normal room' is the description of the state.
+  *default: 'a normal room';
 };
 // '>' indicates ownership, meaning 'hotdog' is a child of 'room'.
 room > hotdog {
-  // 'eat' is the name of a transition. '$ was eaten' is the description of
-  // the transition, where '$' represents the current item ('hotdog' in this
-  // case). '->' represents the actual transition to the next state. In this
-  // example, 'halfeaten' is the next state. The final '[]' contains the
-  // transition's effects. Effects are represented as actions in the form
-  // 'subject verb direct object'.
+  // '[]' contains the state's transitions. 'eat' is the name of a transition.
+  // '$ was eaten' is the description of the transition, where '$' represents
+  // the current item ('hotdog' in this case). '->' represents the actual
+  // transition to the next state. In this example, 'halfeaten' is the next
+  // state. The final '[]' contains the transition's effects. Effects are
+  // represented as actions in the form 'subject verb direct object'.
   *full: 'a normal hotdog' [eat: '$ was eaten' -> halfeaten ['$ fill player']];
-  halfeaten: 'a halfeaten hotdog' [];
+  halfeaten: 'a halfeaten hotdog';
 };
 room > player {
   // An '_' before a transition name indicates it is protected. This means that
   // the 'fill' transition cannot be directly executed by the player, and must
   // instead be executed as an effect of another transition.
-  *hungry: 'a hungry hungry hippo' [_fill: 'mmm, delicious!' -> full []];
-  full: 'a full belly' [];
+  *hungry: 'a hungry hungry hippo' [_fill: 'mmm, delicious!' -> full];
+  full: 'a full belly';
+};
+
+Example 2: 'flip lightswitch'
+room {
+  *dark: 'a dark room' [_enlighten: '$ lights up!' -> lit ['$ blind player']];
+  lit: 'a nicely lit room' [_endarken: '$ becomes dark' -> dark];
+};
+room > player {
+  *default: 'a well built snail' [_blind: '$ becomes blind!' -> blinded];
+  blinded: 'can't see a thing';
+}
+room > lightswitch {
+  *off: "a lightswitch in the 'off' position" [flip: '$ was flipped' -> on ['$
+    enlighten room']];
+  on:  "a lightswitch in the 'on' position" [flip: '$ was flipped' -> off ['$
+    endarken room']];
 };
 
 --------
 move player between rooms
-turn on light chain reaction
 take bird
 drop bird
 scream
