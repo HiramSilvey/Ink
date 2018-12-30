@@ -25,14 +25,10 @@ Move (extend Effect):
   Fn Execute(Item actor) // Item to move. Item has a reference to its parent,
                       // so it can be easily removed from that inventory.
 
-Create (extend Effect):
-  Item item // Item to create.
-  Item destination // Where the item will exist after creation.
-  Fn Execute(Item actor) // What is creating the item.
-
-Destroy (extend Effect):
-  Item item // Item to destroy. Item has a reference to its parent, so it can
-            // be easily removed from that inventory.
+Remove (extend Effect):
+  Item item // Item to remove from play. Item has a reference to its parent, 
+            // so it can be easily removed from that inventory. It will be
+            // moved to the top level and have no parent.
   Fn Execute(Item actor) // What is destroying the item.
 
 Actions are not explicitely a class, but exist as a concept and will live in

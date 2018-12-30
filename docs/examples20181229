@@ -14,11 +14,15 @@ room > hotdog {
   // the current item ('hotdog' in this case). '->' represents the actual
   // transition to the next state. In this example, 'halfeaten' is the next
   // state. The final '[]' contains the transition's effects. Effects are
-  // represented as actions in the form 'subject verb direct object'.
-  *full: 'a normal hotdog' [eat: '$ was eaten' -> halfeaten ['$ fill player']];
+  // represented as actions in the form 'subject verb direct object'. '$actor'
+  // refers to the actor executing the transition, which, in this example,
+  // would be 'player'.
+  *full: 'a normal hotdog' [eat: '$ was eaten' -> halfeaten ['$ fill $actor']];
   halfeaten: 'a halfeaten hotdog';
 };
-room > player {
+// The '*' before 'player' indicates that this is the default subject of user
+// actions.
+room > *player {
   // An '_' before a transition name indicates it is protected. This means that
   // the 'fill' transition cannot be directly executed by the player, and must
   // instead be executed as an effect of another transition.
@@ -28,13 +32,20 @@ room > player {
 
 Example 2: 'flip lightswitch'
 room {
-  *dark: 'a dark room' [_enlighten: '$ lights up!' -> lit ['$ blind player']];
+  // '()' represents a query. '$all' is a special keyword, akin to SQL's
+  // 'SELECT *'. '$all in room' means all items that are children of the room.
+  *dark: 'a dark room' [_enlighten: '$ lights up!' -> lit ['$ blind ($all in
+    room)']];
   lit: 'a nicely lit room' [_endarken: '$ becomes dark' -> dark];
 };
-room > player {
-  *default: 'a well built snail' [_blind: '$ becomes blind!' -> blinded];
-  blinded: 'can't see a thing';
-}
+room > *player {
+  *default: 'a normal dude' [_blind: '$ becomes blind!' -> blinded];
+  blinded: 'a normal blind dude';
+};
+room > dog {
+  *default: 'a normal dog' [_blind: '$ becomes blind!' -> blinded];
+  blinded: 'a normal blind dog';
+};
 room > lightswitch {
   *off: "a lightswitch in the 'off' position" [flip: '$ was flipped' -> on ['$
     enlighten room']];
@@ -42,8 +53,54 @@ room > lightswitch {
     endarken room']];
 };
 
---------
-move player between rooms
-take bird
-drop bird
-scream
+Example 3: 'take bird', 'drop bird'
+// Assign a common transition to a variable in JS.
+// Omitting the '-> next_state' part of a transition simply implies the next
+// state is the current state. '//' contains a move or delete. In this example,
+// the ownership notation is used to describe moving the $actor to the room's
+// inventory.
+let go = "_go: '$actor was moved to $' /$ > $actor/"; // In above JS.
+room {
+  *default: 'a nice room' [${go}];
+};
+room > bird {
+  *default: 'a beautiful bluejay';
+};
+room > *player {
+  *default: 'a normal dude' [${go}];
+};
+
+Example 4: 'go through door'
+blue_room {
+  *default: 'a blue room';
+};
+blue_room > door {
+  *open: 'an open door' [go: '$actor went through $' /green_room > $actor/];
+};
+green_room {
+  *default: 'a green room';
+};
+green_room > door {
+  *open: 'an open door' [go: '$actor went through $' /blue_room > $actor/];
+};
+blue_room > *player {
+  *default: 'a normal dude';
+};
+
+Example 5: 'cook hamburger'
+room {
+  *default: 'a room';
+};
+room > *player {
+  *default: 'a normal dude';
+};
+ash {
+  *default: 'a sad pile of ashes';
+};
+room > hamburger {
+  // '-' represents a removal. In this example, the current item (hamburger)
+  // is removed from play and ash is added to the room.
+  *cooked: 'a cooked hamburger' [cook: '$ burned!' /-$, room > ash/];
+};
+
+Possible further examples: 'scream'
