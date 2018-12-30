@@ -7,7 +7,7 @@ room {
   // normal room' is the description of the state. '[]' contains the state's
   // transitions.
   *default: 'a normal room' [];
-}
+};
 // '>' indicates ownership, meaning 'hotdog' is a child of 'room'.
 room > hotdog {
   // 'eat' is the name of a transition. '$ was eaten' is the description of
@@ -23,10 +23,9 @@ room > player {
   // An '_' before a transition name indicates it is protected. This means that
   // the 'fill' transition cannot be directly executed by the player, and must
   // instead be executed as an effect of another transition.
-  *hungry: 'a hungry hungry hippo' [_fill []: 'mmm, delicious!' -> full];
+  *hungry: 'a hungry hungry hippo' [_fill: 'mmm, delicious!' -> full []];
   full: 'a full belly' [];
 };
-
 
 --------
 move player between rooms
