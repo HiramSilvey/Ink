@@ -2,9 +2,8 @@
 %%
 
 \s+			          /* skip whitespace */
-[$a-zA-Z][a-zA-Z_0-9]*                  return "NAME"
-\'(?:[^'\\]|\\.)*\'|\"(?:[^"\\]|\\.)*\" return "STR"
-"_"                                     return "_"
+[$a-zA-Z_][a-zA-Z_0-9]*                 return "NAME"
+\'(?:[^'\\]|\\.)*\'|\"(?:[^"\\]|\\.)*\" yytext = yytext.substr(1,yyleng-2); return "STR"
 "{"                                     return "{"
 "}"                                     return "}"
 ";"                                     return ";"
@@ -53,6 +52,7 @@ transfer
         { $$ = {"item":$2}; }
     | NAME ">" NAME
         { $$ = {"item":$3,"destination":$1}; }
+    ;
 
 transfers
     : transfer
@@ -78,13 +78,10 @@ change
 
 effect
     : NAME ":" STR 
-        { $$ = {"name":$1,"description":$3,"protected":false}; }
-    | "_" NAME ":" STR 
-        { $$ = {"name":$2,"description":$4,"protected":true}; }
+        { $$ = {"name":$1,"description":$3,"protected":$1[0] == "_"}; }
     | NAME ":" STR change
-        { $$ = {"name":$1,"description":$3,"protected":false,"change":$4}; }
-    | "_" NAME ":" STR change
-        { $$ = {"name":$2,"description":$4,"protected":true,"change":$5}; }
+        { $$ = {"name":$1,"description":$3,"protected":$1[0] == "_","change":$4}; }
+    ;
 
 effects
     : effect
@@ -101,7 +98,7 @@ state
     | NAME ":" STR "[" effects "]" ";"
         { $$ = {"name":$1,"description":$3,"current":false,"effects":$5}; }
     | "*" NAME ":" STR "[" effects "]" ";"
-        { $$ = {"name":$2,"description":$4,"current":true,"effects":$5}; }
+        { $$ = {"name":$2,"description":$4,"current":true,"effects":$6}; }
     ;
 
 states
