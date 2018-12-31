@@ -17,7 +17,7 @@ room > hotdog {
   // represented as actions in the form 'subject verb direct object'. '$actor'
   // refers to the actor executing the transition, which, in this example,
   // would be 'player'.
-  *full: 'a normal hotdog' [eat: '$ was eaten' -> halfeaten ['$ fill $actor']];
+  *full: 'a normal hotdog' [eat: 'hotdog was eaten' -> halfeaten [hotdog fill $actor]];
   halfeaten: 'a halfeaten hotdog';
 };
 // The '*' before 'player' indicates that this is the default subject of user
@@ -32,42 +32,35 @@ room > *player {
 
 Example 2: 'flip lightswitch'
 room {
-  // '()' represents a query. '$all' is a special keyword, akin to SQL's
-  // 'SELECT *'. '$all in room' means all items that are children of the room.
-  *dark: 'a dark room' [_enlighten: '$ lights up!' -> lit ['$ blind ($all in
-    room)']];
-  lit: 'a nicely lit room' [_endarken: '$ becomes dark' -> dark];
+  // '()' represents a query. // TODO(hiram): describe more
+  *dark: 'a dark room' [_enlighten: 'the room lights up!' -> lit [room blind (hasParent, room)]];
+  lit: 'a nicely lit room' [_endarken: 'the room becomes dark' -> dark];
 };
 room > *player {
-  *default: 'a normal dude' [_blind: '$ becomes blind!' -> blinded];
+  *default: 'a normal dude' [_blind: 'the player becomes blind!' -> blinded];
   blinded: 'a normal blind dude';
 };
 room > dog {
-  *default: 'a normal dog' [_blind: '$ becomes blind!' -> blinded];
+  *default: 'a normal dog' [_blind: 'the dog becomes blind!' -> blinded];
   blinded: 'a normal blind dog';
 };
 room > lightswitch {
-  *off: "a lightswitch in the 'off' position" [flip: '$ was flipped' -> on ['$
-    enlighten room']];
-  on:  "a lightswitch in the 'on' position" [flip: '$ was flipped' -> off ['$
-    endarken room']];
+  *off: "a lightswitch in the 'off' position" [flip: 'the lightswitch was flipped' -> on [lightswitch enlighten room]];
+  on:  "a lightswitch in the 'on' position" [flip: 'the lightswitch was flipped' -> off [lightswitch endarken room]];
 };
 
 Example 3: 'take bird', 'drop bird'
 // Assign a common transition to a variable in JS.
 // Omitting the '-> next_state' part of a transition simply implies the next
-// state is the current state. '//' contains a move or delete. In this example,
-// the ownership notation is used to describe moving the $actor to the room's
-// inventory.
-let go = "_go: '$actor was moved to $' /$ > $actor/"; // In above JS.
+// state is the current state. TODO(hiram): describe more
 room {
-  *default: 'a nice room' [${go}];
+  *default: 'a nice room' [_go: '$actor was moved to the room' [room > $actor]];
 };
 room > bird {
   *default: 'a beautiful bluejay';
 };
 room > *player {
-  *default: 'a normal dude' [${go}];
+  *default: 'a normal dude' [_go: '$actor was moved to the player' [player > $actor]];
 };
 
 Example 4: 'go through door'
@@ -75,13 +68,13 @@ blue_room {
   *default: 'a blue room';
 };
 blue_room > door {
-  *open: 'an open door' [go: '$actor went through $' /green_room > $actor/];
+  *open: 'an open door' [go: '$actor went through the door' [green_room > $actor]];
 };
 green_room {
   *default: 'a green room';
 };
 green_room > door {
-  *open: 'an open door' [go: '$actor went through $' /blue_room > $actor/];
+  *open: 'an open door' [go: '$actor went through the door' [blue_room > $actor]];
 };
 blue_room > *player {
   *default: 'a normal dude';
@@ -98,9 +91,8 @@ ash {
   *default: 'a sad pile of ashes';
 };
 room > hamburger {
-  // '-' represents a removal. In this example, the current item (hamburger)
-  // is removed from play and ash is added to the room.
-  *cooked: 'a cooked hamburger' [cook: '$ burned!' /-$, room > ash/];
+  // TODO(hiram): explain
+  *cooked: 'a cooked hamburger' [cook: 'the hamburger burned!' [ > hamburger, room > ash ]];
 };
 
 Possible further examples: 'scream'

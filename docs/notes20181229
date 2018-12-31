@@ -13,7 +13,7 @@ Effect (interface):
   String description
   Boolean protected // If true, this effect cannot be directly initiated by
                     // the player.
-  List effects // List of Effects to apply after the current effect.
+  List effects // List of ActionQueries to apply after the current effect.
   Fn Execute(Item actor) // What is doing it.
 
 Transition (extend Effect):
@@ -27,18 +27,11 @@ Move (extend Effect):
   String description // 'You've entered a red room."
   Boolean protected
   List effects
-  Item destination // To where the item will be moved.
+  Item destination // To where the item will be moved. If this is null, the
+                   // item will be removed from play by moving it to the top
+                   // level.
   Fn Execute(Item actor) // Item to move. Item has a reference to its parent,
                       // so it can be easily removed from that inventory.
-
-Remove (extend Effect):
-  String description // 'The key vanished into thin air."
-  Boolean protected
-  List effects
-  Item item // Item to remove from play. Item has a reference to its parent, 
-            // so it can be easily removed from that inventory. It will be
-            // moved to the top level and have no parent.
-  Fn Execute(Item actor) // What is destroying the item.
 
 Actions are not explicitely a class, but exist as a concept and will live in
 function logic. Actions have an actor, verb, and direct object. For example,

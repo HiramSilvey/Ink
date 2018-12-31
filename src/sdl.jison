@@ -2,22 +2,19 @@
 %%
 
 \s+			          /* skip whitespace */
-[a-zA-Z_][a-zA-Z_0-9]*                  return "NAME"
+[$a-zA-Z][a-zA-Z_0-9]*                  return "NAME"
 \'(?:[^'\\]|\\.)*\'|\"(?:[^"\\]|\\.)*\" return "STR"
+"_"                                     return "_"
 "{"                                     return "{"
 "}"                                     return "}"
 ";"                                     return ";"
 "*"                                     return "*"
 ":"                                     return ":"
-"'"                                     return "'"
 ">"                                     return ">"
 "["                                     return "["
 "]"                                     return "]"
-"$"                                     return "$"
 "->"                                    return "->"
 ","                                     return ","
-"/"                                     return "/"
-"$actor"                                return "ACTOR"
 <<EOF>>                	                return "EOF"
 .                                       return "INVALID"
 
@@ -27,69 +24,67 @@
 
 %%
 
-state
-    : "*" NAME ":" STR ";"
-        { $$ = {"name":$1,"subtext":$4,"start":true}; }
-    | NAME ":" STR ";"
-        { $$ = {"name":$1,"subtext":$3,"start":false}; }
+query
+    : NAME
+        { $$ = {"object":$1}; }
+    | "(" NAME "," query ")"
+        { $$ = {"function":$2,"query":$4}; }
     ;
 
-
-
-
-
-
-
-sdl
-    : objects EOF
-        { return $1; }
+action
+    : query NAME query
+        { $$ = {"subject":$1,"verb":$2,"object":$3}; }
     ;
-    
-objects
-    : object ";" objects
+
+actions
+    : action
+        { $$ = [$1]; }
+    | action "," actions
         { $$ = [$1].concat($3); }
-    | object
-	{ $$ = [$1]; }
-    ;
-
-object
-    : NAME "{" states '|' transitions '|' "[" subItems "]" ";" "}"
-        { $$ = {"name":$1,"states":$3,"transitions":$5,"subItems":$8}; }
-    | NAME "{" states '|' transitions "}"
-        { $$ = {"name":$1,"states":$3,"transitions":$5}; }
-    | NAME "{" states '|' "[" subItems "]" ";" "}"
-        { $$ = {"name":$1,"states":$3,"subItems":$6}; }
-    | NAME "{" states "}"
-        { $$ = {"name":$1,"states":$3}; }
-    ;
-
-states
-    : state states
-        { $$ = [$1].concat($2); }
-    | state
-        { $$ = [$1]; }
-    ;
-
-transitions
-    : transition transitions
-        { $$ = [$1].concat($2); }
-    | transition
-        { $$ = [$1]; }
     ;
 
 transition
-    : NAME ":" NAME ">" NAME ";"
-        { $$ = {"name":$1,"start":$3,"end":$5,"effects":[]}; }
-    | NAME ":" NAME ">" NAME "[" effects "]" ";"
-        { $$ = {"name":$1,"start":$3,"end":$5,"effects":$7}; }
+    : "->" NAME
+        { $$ = {"next_state":$2}; }
     ;
 
-subItems
-    : NAME
+transfer
+    : ">" NAME
+        { $$ = {"item":$2}; }
+    | NAME ">" NAME
+        { $$ = {"item":$3,"destination":$1}; }
+
+transfers
+    : transfer
         { $$ = [$1]; }
-    | NAME "," subItems
+    | transfer "," transfers
         { $$ = [$1].concat($3); }
     ;
+
+change
+    : transition
+        { $$ = {"transition":$1}; }
+    | "[" transfers "]"
+        { $$ = {"transfers":$1}; }
+    | "[" actions "]"
+        { $$ = {"actions":$1}; }
+    | transition "[" transfers "]"
+        { $$ = {"transition":$1,"transfers":$3}; }
+    | transition "[" actions "]"
+        { $$ = {"transition":$1,"actions":$3}; }
+    | transition "[" transfers "]" "[" actions "]"
+        { $$ = {"transition":$1,"transfers":$3,"actions":$6}; }
+    ;
+
+effect
+    : NAME ":" STR 
+        { $$ = {"name":$1,"description":$3,"protected":false}; }
+    | "_" NAME ":" STR 
+        { $$ = {"name":$2,"description":$4,"protected":true}; }
+    | NAME ":" STR change
+        { $$ = {"name":$1,"description":$3,"protected":false,"change":$4}; }
+    | "_" NAME ":" STR change
+        { $$ = {"name":$2,"description":$4,"protected":true,"change":$5}; }
 
 effects
     : effect
@@ -98,9 +93,39 @@ effects
         { $$ = [$1].concat($3); }
     ;
 
-effect
-  : NAME
-      { $$ = $1; }
-  | NAME ">" NAME
-      { $$ = {"item":$1,"newParent":$3}; }
-  ;
+state
+    : NAME ":" STR ";"
+        { $$ = {"name":$1,"description":$3,"current":false}; }
+    | "*" NAME ":" STR ";"
+        { $$ = {"name":$2,"description":$4,"current":true}; }
+    | NAME ":" STR "[" effects "]" ";"
+        { $$ = {"name":$1,"description":$3,"current":false,"effects":$5}; }
+    | "*" NAME ":" STR "[" effects "]" ";"
+        { $$ = {"name":$2,"description":$4,"current":true,"effects":$5}; }
+    ;
+
+states
+    : state
+        { $$ = [$1]; }
+    | state states
+        { $$ = [$1].concat($2); }
+    ;
+
+object
+    : NAME "{" states "}" ";"
+        { $$ = {"name":$1,"states":$3}; }
+    | NAME ">" NAME "{" states "}" ";"
+        { $$ = {"name":$3,"parent":$1,"states":$5}; }
+    ;
+
+objects
+    : object
+        { $$ = [$1]; }
+    | object objects
+        { $$ = [$1].concat($2); }
+    ;
+
+sdl
+    : objects EOF
+        { return $1; }
+    ;
