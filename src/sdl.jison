@@ -2,27 +2,43 @@
 %%
 
 \s+			          /* skip whitespace */
-[a-zA-Z_][a-zA-Z_0-9]*		  return "NAME"
-\"(?:[^"\\]|\\.)*\"		  return "STR"
-"{"				  return "{"
-"}"				  return "}"
-"["				  return "["
-"]"				  return "]"
-"\n"				  return "\n"
-"|"				  return "|"
-":"				  return ":"
-";"				  return ";"
-"*"				  return "*"
-">"				  return ">"
-","         return ","
-<<EOF>>                	       	  return "EOF"
-.                      		  return "INVALID"
+[a-zA-Z_][a-zA-Z_0-9]*                  return "NAME"
+\'(?:[^'\\]|\\.)*\'|\"(?:[^"\\]|\\.)*\" return "STR"
+"{"                                     return "{"
+"}"                                     return "}"
+";"                                     return ";"
+"*"                                     return "*"
+":"                                     return ":"
+"'"                                     return "'"
+">"                                     return ">"
+"["                                     return "["
+"]"                                     return "]"
+"$"                                     return "$"
+"->"                                    return "->"
+","                                     return ","
+"/"                                     return "/"
+"$actor"                                return "ACTOR"
+<<EOF>>                	                return "EOF"
+.                                       return "INVALID"
 
 /lex
 
 %start sdl
 
 %%
+
+state
+    : "*" NAME ":" STR ";"
+        { $$ = {"name":$1,"subtext":$4,"start":true}; }
+    | NAME ":" STR ";"
+        { $$ = {"name":$1,"subtext":$3,"start":false}; }
+    ;
+
+
+
+
+
+
 
 sdl
     : objects EOF
@@ -88,10 +104,3 @@ effect
   | NAME ">" NAME
       { $$ = {"item":$1,"newParent":$3}; }
   ;
-
-state
-    : NAME "*" ":" STR ";"
-        { $$ = {"name":$1,"subtext":$4,"start":true}; }
-    | NAME ":" STR ";"
-        { $$ = {"name":$1,"subtext":$3,"start":false}; }
-    ;

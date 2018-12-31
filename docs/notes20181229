@@ -10,22 +10,31 @@ Item:
   Item parent // The item that contains this item.
 
 Effect (interface):
+  String description
   Boolean protected // If true, this effect cannot be directly initiated by
                     // the player.
+  List effects // List of Effects to apply after the current effect.
   Fn Execute(Item actor) // What is doing it.
 
 Transition (extend Effect):
-  String description // 'The light turns on.'
+  String description // 'The lights turned on."
+  Boolean protected
+  List effects
   State next_state
-  List effects // List of Effects to apply after transitioning.
   Fn Execute(Item actor) // What is causing the transition.
 
 Move (extend Effect):
+  String description // 'You've entered a red room."
+  Boolean protected
+  List effects
   Item destination // To where the item will be moved.
   Fn Execute(Item actor) // Item to move. Item has a reference to its parent,
                       // so it can be easily removed from that inventory.
 
 Remove (extend Effect):
+  String description // 'The key vanished into thin air."
+  Boolean protected
+  List effects
   Item item // Item to remove from play. Item has a reference to its parent, 
             // so it can be easily removed from that inventory. It will be
             // moved to the top level and have no parent.
