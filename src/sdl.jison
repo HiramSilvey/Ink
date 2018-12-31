@@ -3,7 +3,7 @@
 
 \s+			          /* skip whitespace */
 [a-zA-Z_][a-zA-Z_0-9]*		  return "NAME"
-\"(?:[^"\\]|\\.)*\"		  return "STR"
+\"(?:[^"\\]|\\.)*\"		  yytext = yytext.substr(1,yyleng-2); return "STR"
 "{"				  return "{"
 "}"				  return "}"
 "["				  return "["
@@ -37,12 +37,12 @@ objects
     ;
 
 object
-    : NAME "{" states '|' transitions '|' "[" subItems "]" ";" "}"
-        { $$ = {"name":$1,"states":$3,"transitions":$5,"subItems":$8}; }
+    : NAME "{" states '|' transitions '|' "[" children "]" ";" "}"
+        { $$ = {"name":$1,"states":$3,"transitions":$5,"children":$8}; }
     | NAME "{" states '|' transitions "}"
         { $$ = {"name":$1,"states":$3,"transitions":$5}; }
-    | NAME "{" states '|' "[" subItems "]" ";" "}"
-        { $$ = {"name":$1,"states":$3,"subItems":$6}; }
+    | NAME "{" states '|' "[" children "]" ";" "}"
+        { $$ = {"name":$1,"states":$3,"children":$6}; }
     | NAME "{" states "}"
         { $$ = {"name":$1,"states":$3}; }
     ;
@@ -68,10 +68,10 @@ transition
         { $$ = {"name":$1,"start":$3,"end":$5,"effects":$7}; }
     ;
 
-subItems
+children
     : NAME
         { $$ = [$1]; }
-    | NAME "," subItems
+    | NAME "," children
         { $$ = [$1].concat($3); }
     ;
 

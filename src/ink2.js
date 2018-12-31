@@ -1,108 +1,14 @@
+sdl_parser = require('./sdl.js');
+
 class DictionaryEntry{
     constructor(synonyms, actionQuery){
 	this.synonyms = synonyms;
-	this.condition = condition;
 	this.actionQuery = actionQuery;
     }
 }
 
-// An ActionQuery is associated with a verb, and is "realised" in the current context to create actual Actions
-class ActionQuery {
-    constructor(ty, verb, subjectQuery, objectQuery){
-	this.actionType = ty;
-	this.subjectQuery = subjectQuery || ["hasName", "$subject"];
-	this.objectQuery = objectQuery || ["hasName", "$object"];
-	this.verb = verb;
-    }
-    realise(context, actor, ob){
-	let args = {"$subject":actor,"$object":ob};
-	let action_subject = this.subjectQuery.execute(context, args);
-	let action_object = this.objectQuery.execute(context, args);
-	return new Action(action_subject, this.verb, action_object);
-    }
-}
-
-// Actions 
-class Action { // imma sue u lol
-    constructor(sub, verb, ob){
-	this.subject = sub;
-	this.verb = verb;
-	this.object = ob;
-    }
-    execute(context){
-	return this.object.doTransition(verb);
-    }
-}
-
-// States represent the current status of an item
-class State {
-    constructor(subtext, transitions) {
-	this.description = description; // The answer to "look"
-	this.transitions = transitions;
-    }
-}
-
-// Transitions represent a change in state of an item
-// Effects are applied when a transition occurs
-class Transition {
-    constructor(nextState, effects, description) {
-	this.nextState = nextState;
-	this.effects = []; // A list of ActionQuery objects
-	this.description = description;
-    }    
-}
-
-// Items are every contained piece of information
-class Item {
-    constructor(descriptor, states, start, parent, children) {
-	this.descritor = descriptor;
-	this.currentState = start;
-	this.states = states;
-	this.parent = parent || null;
-	this.children = children || {};
-    }
-
-    doTransition(t) {
-	let trans = this.currentState.transtions[t];
-	if(!trans) throw "No such transition";
-	this.currentState = trans.nextState;
-	console.log(trans.description);
-	return trans.effects;
-    }
-    
-    addSubItem(item) {
-	item.parent = this;
-	if (this.subItems.hasOwnProperty(item.descriptor)) {
-	    this.subItems[item.descriptor].push(item);
-	} else {
-	    this.subItems[item.descriptor] = [item];
-	}
-    }
-
-    removeSubItem(item) {
-	let subItemType = this.subItems[item.descriptor];
-	let index = subItemType.indexOf(item);
-	if (index != -1) {
-	    subItemType.splice(index, 1);
-	    if (!subItemType.length) delete this.subItems[item.descriptor];
-	}
-    }
-
-    toString() {
-	let ans = "";
-	if (this.currentState) ans += "state: " + this.currentState.subtext + "\n";
-	for (var descriptor in this.subItems) {
-	    for (var subItem of this.subItems[descriptor]) {
-		ans += descriptor + ": " + subItem.currentState.subtext + "\n";
-	    }
-	}
-	return ans;
-    }
-}
-
 class Query {
-    // Example: spec = ["and", []]
-    constuctor(spec) {
+    constructor(spec) {
 	this.spec = spec;
 	this.functions = {
 	    "and": {
@@ -121,6 +27,10 @@ class Query {
 		"impl": this.hasName,
 		"args": "data"
 	    },
+	    "hasParent": {
+		"impl": this.hasParent,
+		"args": "query"
+	    },
 	    "hasChild": {
 		"impl": this.hasChild,
 		"args": "query"
@@ -134,24 +44,19 @@ class Query {
     }
     execute(context, globalArgs, root) {
 	root = root || this.spec;
+	console.log('EQ',context.length, globalArgs, 'r',root);
 	var fn = root[0];
-	if (!fn in this.functions) {
-	    console.log(`Invalid query function: {fn}`);
-	    return [];
-	}
+	if (!(fn in this.functions)) throw `Invalid query function: {fn}`;
 	fn = this.functions[fn];
 	var args = [];
-	if (fn.args == "query") {
-	    for (var q of root[1]) {
-		args.push(this.execute(context, globalArgs, q));
-	    }
-	} else {
-	    for (var arg of root[1].slice()) {
-		if (arg[0] == "$") args.push(globalArgs[arg.substring(1)] || arg);
-		else args.push(arg);
-	    }
-	}
-	return fn.impl(context, args);
+	if (fn.args == "query") for (var q of root.slice(1)) args.push(this.execute(context, globalArgs, q));
+	else for (var arg of root.slice(1)) args.push(arg[0] == "$" && globalArgs[arg] ? globalArgs[arg] : arg);
+	//for(var a of args) console.log('Q', a.toString(), globalArgs)
+	//console.log(args);
+	var ans = fn.impl(context, args);
+	for(var a of ans) console.log('ANS',a && a.toString());
+	//console.log('AQ',ans)
+	return ans;
     }
     and(context, args) {
 	// args = [ query0, query1, ... ]
@@ -160,8 +65,8 @@ class Query {
 	var ans = [];
 	for (var e of elts) {
 	    for (var l of args.slice(1)) {
-		if (ans.includes(e)) continue;
-		if (l.includes(e)) ans.push(e);
+		if (ans.indexOf(e) >= 0) continue;
+		if (l.indexOf(e) >= 0) ans.push(e);
 	    }
 	}
 	return ans;
@@ -193,18 +98,30 @@ class Query {
 	for (var item of context) {
 	    if (item.descriptor == args[0]) ans.push(item);
 	}
+	return ans;
     }
     hasChild(context, args) {
 	// args = [ query0 ]
 	var ans = [];
+	
 	for (var item of args[0]) {
-	    for (var subItem of item.subItems) {
-		if (subItem.descriptor == args[0]) {
+	    console.log('parent',item.parent && item.parent.toString());
+	    if(ans.indexOf(item.parent) < 0) ans.push(item.parent);
+	}
+	return ans;
+    }
+    hasParent(context, args) {
+	// args = [ query0 ]
+	var ans = [];
+	for (var item of context) {
+	    console.log('par',item.parent && item.parent.toString())
+	    for(var i of args[0]){
+		if(ans.indexOf(item) < 0 && item.parent == i){
 		    ans.push(item);
-		    break;
 		}
 	    }
 	}
+	return ans;
     }
     stateIs(context, args) {
 	// args = [ name_str ]
@@ -212,6 +129,113 @@ class Query {
 	for (var item of context) {
 	    if (item.currentState.descriptor == args[0]) ans.push(item);
 	}
+	return ans;
+    }
+}
+var q = new Query([]);
+
+// An ActionQuery is associated with a verb, and is "realised" in the current context to create actual Actions
+class ActionQuery {
+    constructor(verb, subjectQuery, objectQuery){
+	subjectQuery = subjectQuery || ["hasName", "$subject"];
+	objectQuery = objectQuery || ["hasName", "$object"];
+	this.subjectQuery = new Query(subjectQuery);
+	this.objectQuery = new Query(objectQuery);
+	this.verb = verb;
+    }
+    realise(context, actor, ob){
+	let args = {"$subject":actor,"$object":ob};
+	console.log(context, args);
+	let action_subject = this.subjectQuery.execute(context, args);
+	let action_object = this.objectQuery.execute(context, args);
+	console.log('sub',action_subject);
+	console.log('ob',action_object);
+	if(action_subject.length == 0) throw "No valid subject";
+	if(action_subject.length > 1) throw "Ambiguous subject";
+	if(action_object.length == 0) throw "No valid object";
+	if(action_object.length > 1) throw "Ambiguous object";
+	return new Action(action_subject[0], this.verb, action_object[0]);
+    }
+}
+
+// Actions 
+class Action { // imma sue u lol
+    constructor(sub, verb, ob){
+	this.subject = sub;
+	this.verb = verb;
+	this.object = ob;
+    }
+    execute(context){
+	console.log(this.object.states);
+	return this.object.doTransition(this.verb);
+    }
+    toString(){
+	return `SUB=${this.subject.toString()}, VRB=${this.verb}, OBJ=${this.object.toString()}`;
+    }
+}
+
+// States represent the current status of an item
+class State {
+    constructor(subtext, transitions) {
+	this.description = subtext; // The answer to "look"
+	this.transitions = transitions || {};
+    }
+}
+
+// Transitions represent a change in state of an item
+// Effects are applied when a transition occurs
+class Transition {
+    constructor(nextState, effects, description) {
+	this.nextState = nextState;
+	this.effects = []; // A list of ActionQuery objects
+	this.description = description;
+    }
+}
+
+// Items are every contained piece of information
+class Item {
+    constructor(descriptor, states, start, parent, children) {
+	this.descriptor = descriptor;
+	this.currentState = start;
+	this.states = states;
+	this.parent = parent || null;
+	this.children = children || [];
+    }
+
+    doTransition(t) {
+	console.log(this.states, 'AA',this.states[this.currentState]);
+	let trans = this.states[this.currentState].transitions[t];
+	if(!trans) throw "No such transition";
+	this.currentState = trans.nextState;
+	console.log(trans.description);
+	return trans.effects;
+    }
+    
+    addSubItem(item) {
+	item.parent = this;
+	if (this.children.hasOwnProperty(item.descriptor)) {
+	    this.children[item.descriptor].push(item);
+	} else {
+	    this.children[item.descriptor] = [item];
+	}
+    }
+
+    removeSubItem(item) {
+	let subItemType = this.children[item.descriptor];
+	let index = subItemType.indexOf(item);
+	if (index != -1) {
+	    subItemType.splice(index, 1);
+	    if (!subItemType.length) delete this.children[item.descriptor];
+	}
+    }
+
+    toString() {
+	let ans = `${this.descriptor} [in: ${this.parent ? this.parent.descriptor : "[None]"}; state: ${this.currentState}; `;
+	for (var child of this.children) {
+	    ans += `has: ${child.descriptor} -- ${child.currentState}; `;
+	}
+	ans += "]"
+	return ans;
     }
 }
 
@@ -220,28 +244,32 @@ var dictionary = {
 	["move"],
 	new ActionQuery("go",
 			null,                                                                   // the subject is just the unqualified subject
-			["and", ["hasName","$object"], ["hasParent",["hasChild","$subject"]]])), // Only go things that are in same room
+			["and", ["hasName","$object"], ["hasParent",["hasChild",["hasName","$subject"]]]])), // Only go things that are in same room
+    "eat":new DictionaryEntry(
+	["devour", "gobble"],
+	new ActionQuery("eat",
+			null,                                                                   // the subject is just the unqualified subject
+			["and", ["hasName","$object"], ["hasParent",["hasName","$subject"]]])),             // Only eat things that you have
     "take":new DictionaryEntry(
 	["take","grab"],
 	new ActionQuery("go",
-			["and", ["hasName","$object"], ["hasParent",["hasChild","$subject"]]], // Only take things in the same room
+			["and", ["hasName","$object"], ["hasParent",["hasChild",["hasName","$subject"]]]], // Only take things in the same room
 			["hasName","$subject"])),                                              // "take" is "go" with subject and object reversed
     "scream":new DictionaryEntry(
 	["yell","shout"],
 	new ActionQuery("scream",
 			null, 
-			["hasParent",["hasChild","$subject"]])),                                // scream affects only things in same room
+			["hasParent",["hasChild",["hasName","$subject"]]])),                                // scream affects only things in same room
     "look":new DictionaryEntry(
 	["observe","behold"],
 	new ActionQuery("look"))
 }
 
-var model = {};
+var universe = {};
 
 function getActionQuery(verb){
-    for(var word of dictionary){
-	let i = dictionary[word].synonyms.indexOf(verb);
-	if(i < 0) continue;
+    for(var word in dictionary){
+	if(word != verb && dictionary[word].synonyms.indexOf(verb) < 0) continue;
 	return dictionary[word].actionQuery;
     }
 }
@@ -255,17 +283,21 @@ function exec(s, v, o){
 	    let subject = a[0];
 	    let verb = a[1];
 	    let object = a[2];
+	    console.log('EXEC SVO',subject,verb,object);
 	    // Parse
 	    // (We're pretending already parsed into SVO)
 	    
 	    // Template
 	    let aq = getActionQuery(verb);
+	    for(var u of universe) console.log(u.toString());
 	    
 	    // Resolve objects
-	    let action = aq.realise(model, subject, object);
+	    let action = aq.realise(universe, subject, object);
+	    
+	    console.log(action.toString());
 	    
 	    // Do transition
-	    let effects = action.execute(model);
+	    let effects = action.execute(universe);
 	    
 	    for(var e of effects) {
 		if(e.type == 'action') { // Queue follow-on actions for the next round
@@ -274,25 +306,80 @@ function exec(s, v, o){
 		}
 		else if(e.type == 'move') { // Execute any moves immediately
 		    let args = {"$subject":action.subject};
-		    let src = e.src.execute(model, args);
-		    let dst = e.dst.execute(model, args);
-		    let obj = e.obj.execute(model, args);
+		    let src = e.src.execute(universe, args);
+		    let dst = e.dst.execute(universe, args);
+		    let obj = e.obj.execute(universe, args);
 		    if(!src.hasSubItem(obj)) throw obj.toString() + " is not in " + src.toString();
 		    src.removeSubItem(obj);
 		    dst.addSubItem(obj);
 		}
 		else if(e.type == 'destroy') { // Execute any destroys immediately
 		    let args = {"$subject":action.subject};
-		    let obj = e.obj.execute(model, args);
+		    let obj = e.obj.execute(universe, args);
 		    obj.parent.removeSubItem(obj);
 		}
 		else if(e.type == 'create') { // Execute any creates immediately
 		    let args = {"$subject":action.subject};
-		    let obj = e.obj.execute(model, args);
+		    let obj = e.obj.execute(universe, args);
 		    obj.parent.addSubItem(obj);
 		}
 	    }
 	}
 	actions = next_actions;
     }
+}
+
+function json2obj(input) {
+    let model = [];
+    var all_items = {}
+    for (var o of input) {
+	var states = {};
+	var start = null;
+	for (var s of o.states){
+	    states[s.name] = new State(s.subtext, []);
+	    if(s.start) start = s.name;
+	}
+	
+	let item = new Item(o.name, states, start, o.parent || null, o.children);
+	all_items[o.name] = item;
+	
+	for (var t of o.transitions) {
+	    let source = item.states[t.start];
+	    let target = item.states[t.end];
+	    let trans = new Transition(target);
+	    for (var e of t.effects) {
+		trans.effects.push(e);
+	    }
+	    source.transitions[t.name] = trans;
+	}
+	model.push(item);
+    }
+    for(var i of model){
+	let new_children = [];
+	for(var c of i.children){
+	    for(var j of model){
+		if(j.descriptor == c){
+		    new_children.push(j);
+		}
+	    }
+	}
+	i.children = new_children;
+    }
+    for(var i of model){
+	for(var c of i.children){
+	    c.parent = i;
+	}
+    }
+    return model;
+}
+
+function setUniverse(spec){
+    let jm = sdl_parser.parse(spec);
+    universe = json2obj(jm);
+    //console.log(universe);
+}
+
+module.exports = {
+    setUniverse: setUniverse,
+    exec: exec
 }

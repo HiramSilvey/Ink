@@ -75,7 +75,7 @@ var sdl = (function(){
 var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,11],$V2=[11,16],$V3=[1,20],$V4=[5,7],$V5=[1,26],$V6=[8,11,16],$V7=[1,49],$V8=[15,22];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"sdl":3,"objects":4,"EOF":5,"object":6,";":7,"NAME":8,"{":9,"states":10,"|":11,"transitions":12,"[":13,"subItems":14,"]":15,"}":16,"state":17,"transition":18,":":19,">":20,"effects":21,",":22,"effect":23,"*":24,"STR":25,"$accept":0,"$end":1},
+symbols_: {"error":2,"sdl":3,"objects":4,"EOF":5,"object":6,";":7,"NAME":8,"{":9,"states":10,"|":11,"transitions":12,"[":13,"children":14,"]":15,"}":16,"state":17,"transition":18,":":19,">":20,"effects":21,",":22,"effect":23,"*":24,"STR":25,"$accept":0,"$end":1},
 terminals_: {2:"error",5:"EOF",7:";",8:"NAME",9:"{",11:"|",13:"[",15:"]",16:"}",19:":",20:">",22:",",24:"*",25:"STR"},
 productions_: [0,[3,2],[4,3],[4,1],[6,11],[6,6],[6,9],[6,4],[10,2],[10,1],[12,2],[12,1],[18,6],[18,9],[14,1],[14,3],[21,1],[21,3],[23,1],[23,3],[17,5],[17,4]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
@@ -93,13 +93,13 @@ case 3: case 9: case 11: case 14: case 16:
  this.$ = [$$[$0]]; 
 break;
 case 4:
- this.$ = {"name":$$[$0-10],"states":$$[$0-8],"transitions":$$[$0-6],"subItems":$$[$0-3]}; 
+ this.$ = {"name":$$[$0-10],"states":$$[$0-8],"transitions":$$[$0-6],"children":$$[$0-3]}; 
 break;
 case 5:
  this.$ = {"name":$$[$0-5],"states":$$[$0-3],"transitions":$$[$0-1]}; 
 break;
 case 6:
- this.$ = {"name":$$[$0-8],"states":$$[$0-6],"subItems":$$[$0-3]}; 
+ this.$ = {"name":$$[$0-8],"states":$$[$0-6],"children":$$[$0-3]}; 
 break;
 case 7:
  this.$ = {"name":$$[$0-3],"states":$$[$0-1]}; 
@@ -607,7 +607,7 @@ case 0:/* skip whitespace */
 break;
 case 1:return "NAME"
 break;
-case 2:return "STR"
+case 2:yy_.yytext = yy_.yytext.substr(1,yy_.yyleng-2); return "STR"
 break;
 case 3:return "{"
 break;
@@ -649,3 +649,21 @@ function Parser () {
 Parser.prototype = parser;parser.Parser = Parser;
 return new Parser;
 })();
+
+
+if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
+exports.parser = sdl;
+exports.Parser = sdl.Parser;
+exports.parse = function () { return sdl.parse.apply(sdl, arguments); };
+exports.main = function commonjsMain (args) {
+    if (!args[1]) {
+        console.log('Usage: '+args[0]+' FILE');
+        process.exit(1);
+    }
+    var source = require('fs').readFileSync(require('path').normalize(args[1]), "utf8");
+    return exports.parser.parse(source);
+};
+if (typeof module !== 'undefined' && require.main === module) {
+  exports.main(process.argv.slice(1));
+}
+}

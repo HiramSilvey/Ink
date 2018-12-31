@@ -1,1 +1,1 @@
-../node_modules/.bin/jison sdl.jison -m js -o sdl.js
+../node_modules/.bin/jison sdl.jison -m commonjs -o sdl.js
