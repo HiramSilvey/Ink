@@ -65,9 +65,11 @@ change
     : transition
         { $$ = {"transition":$1}; }
     | "[" transfers "]"
-        { $$ = {"transfers":$1}; }
+        { $$ = {"transfers":$2}; }
     | "[" actions "]"
-        { $$ = {"actions":$1}; }
+        { $$ = {"actions":$2}; }
+    | "[" transfers "]" "[" actions "]"
+        { $$ = {"transfers":$2, "actions":$5}; }
     | transition "[" transfers "]"
         { $$ = {"transition":$1,"transfers":$3}; }
     | transition "[" actions "]"
