@@ -9,7 +9,7 @@ room > hotdog {
   halfeaten: 'a halfeaten hotdog';
 };
 room > player {
-  *hungry: 'a hungry hungry hippo' [ _fill: 'mmm, delicious!' -> full];
+  *hungry: 'a hungry hungry hippo' [_fill: 'mmm, delicious!' -> full];
   full: 'a full belly';
 };
 `);

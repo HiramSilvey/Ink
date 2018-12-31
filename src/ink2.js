@@ -375,7 +375,7 @@ function json2obj(input) {
 
 function setUniverse(spec){
     let jm = sdl_parser.parse(spec);
-    console.log(jm);
+    console.log(JSON.stringify(jm, null, " "));
     universe = json2obj(jm);
     //console.log(universe);
 }
