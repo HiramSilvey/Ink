@@ -143,7 +143,7 @@ class ActionQuery {
 	this.objectQuery = new Query(objectQuery);
 	this.verb = verb;
     }
-    realise(context, actor, ob){
+    execute(context, actor, ob){
 	let args = {"$subject":actor,"$object":ob};
 	console.log(context, args);
 	let action_subject = this.subjectQuery.execute(context, args);
@@ -154,23 +154,8 @@ class ActionQuery {
 	if(action_subject.length > 1) throw "Ambiguous subject";
 	if(action_object.length == 0) throw "No valid object";
 	if(action_object.length > 1) throw "Ambiguous object";
-	return new Action(action_subject[0], this.verb, action_object[0]);
-    }
-}
-
-// Actions 
-class Action { // imma sue u lol
-    constructor(sub, verb, ob){
-	this.subject = sub;
-	this.verb = verb;
-	this.object = ob;
-    }
-    execute(context){
-	console.log(this.object.states);
-	return this.object.doTransition(this.verb);
-    }
-    toString(){
-	return `SUB=${this.subject.toString()}, VRB=${this.verb}, OBJ=${this.object.toString()}`;
+	console.log(`SUB=${action_subject[0].toString()}, VRB=${this.verb}, OBJ=${action_object[0].toString()}`);
+	action_object[0].doAction(this.verb);
     }
 }
 
@@ -202,7 +187,8 @@ class Item {
 	this.children = children || [];
     }
 
-    doTransition(t) {
+    doAction(t) {
+	// needs updating
 	console.log(this.states, 'AA',this.states[this.currentState]);
 	let trans = this.states[this.currentState].transitions[t];
 	if(!trans) throw "No such transition";
@@ -292,12 +278,7 @@ function exec(s, v, o){
 	    for(var u of universe) console.log(u.toString());
 	    
 	    // Resolve objects
-	    let action = aq.realise(universe, subject, object);
-	    
-	    console.log(action.toString());
-	    
-	    // Do transition
-	    let effects = action.execute(universe);
+	    let effects = aq.execute(universe, subject, object);
 	    
 	    for(var e of effects) {
 		if(e.type == 'action') { // Queue follow-on actions for the next round
