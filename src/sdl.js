@@ -75,7 +75,7 @@ var sdl = (function(){
 var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,11],$V2=[1,12],$V3=[4,31],$V4=[4,24,28],$V5=[1,29],$V6=[6,17],$V7=[1,52],$V8=[1,54],$V9=[1,51],$Va=[2,1],$Vb=[1,63],$Vc=[1,72],$Vd=[4,6,7,17];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"query":3,"NAME":4,"(":5,",":6,")":7,"action":8,"actions":9,"transition":10,"->":11,"transfer":12,">":13,"transfers":14,"change":15,"[":16,"]":17,"effect":18,":":19,"STR":20,"effects":21,"state":22,";":23,"*":24,"states":25,"object":26,"{":27,"}":28,"objects":29,"sdl":30,"EOF":31,"$accept":0,"$end":1},
+symbols_: {"error":2,"query":3,"NAME":4,"(":5,",":6,")":7,"action_query":8,"action_queries":9,"transition":10,"->":11,"transfer":12,">":13,"transfers":14,"effect":15,"[":16,"]":17,"action":18,":":19,"STR":20,"actions":21,"state":22,";":23,"*":24,"states":25,"item":26,"{":27,"}":28,"items":29,"sdl":30,"EOF":31,"$accept":0,"$end":1},
 terminals_: {2:"error",4:"NAME",5:"(",6:",",7:")",11:"->",13:">",16:"[",17:"]",19:":",20:"STR",23:";",24:"*",27:"{",28:"}",31:"EOF"},
 productions_: [0,[3,1],[3,5],[8,3],[9,1],[9,3],[10,2],[12,2],[12,3],[14,1],[14,3],[15,1],[15,3],[15,3],[15,6],[15,4],[15,4],[15,7],[18,3],[18,4],[21,1],[21,3],[22,4],[22,5],[22,7],[22,8],[25,1],[25,2],[26,5],[26,7],[29,1],[29,2],[30,2]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
@@ -114,25 +114,25 @@ case 12:
  this.$ = {"transfers":$$[$0-1]}; 
 break;
 case 13:
- this.$ = {"actions":$$[$0-1]}; 
+ this.$ = {"action_queries":$$[$0-1]}; 
 break;
 case 14:
- this.$ = {"transfers":$$[$0-4], "actions":$$[$0-1]}; 
+ this.$ = {"transfers":$$[$0-4], "action_queries":$$[$0-1]}; 
 break;
 case 15:
  this.$ = {"transition":$$[$0-3],"transfers":$$[$0-1]}; 
 break;
 case 16:
- this.$ = {"transition":$$[$0-3],"actions":$$[$0-1]}; 
+ this.$ = {"transition":$$[$0-3],"action_queries":$$[$0-1]}; 
 break;
 case 17:
- this.$ = {"transition":$$[$0-6],"transfers":$$[$0-4],"actions":$$[$0-1]}; 
+ this.$ = {"transition":$$[$0-6],"transfers":$$[$0-4],"action_queries":$$[$0-1]}; 
 break;
 case 18:
  this.$ = {"name":$$[$0-2],"description":$$[$0],"protected":$$[$0-2][0] == "_"}; 
 break;
 case 19:
- this.$ = {"name":$$[$0-3],"description":$$[$0-1],"protected":$$[$0-3][0] == "_","change":$$[$0]}; 
+ this.$ = {"name":$$[$0-3],"description":$$[$0-1],"protected":$$[$0-3][0] == "_","effect":$$[$0]}; 
 break;
 case 22:
  this.$ = {"name":$$[$0-3],"description":$$[$0-1],"current":false}; 
@@ -141,10 +141,10 @@ case 23:
  this.$ = {"name":$$[$0-3],"description":$$[$0-1],"current":true}; 
 break;
 case 24:
- this.$ = {"name":$$[$0-6],"description":$$[$0-4],"current":false,"effects":$$[$0-2]}; 
+ this.$ = {"name":$$[$0-6],"description":$$[$0-4],"current":false,"actions":$$[$0-2]}; 
 break;
 case 25:
- this.$ = {"name":$$[$0-6],"description":$$[$0-4],"current":true,"effects":$$[$0-2]}; 
+ this.$ = {"name":$$[$0-6],"description":$$[$0-4],"current":true,"actions":$$[$0-2]}; 
 break;
 case 27: case 31:
  this.$ = [$$[$0-1]].concat($$[$0]); 
