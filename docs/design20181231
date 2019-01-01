@@ -1,0 +1,27 @@
+Query:
+  --
+
+ActionQuery:
+  Query subject
+  String verb
+  Query object
+
+Transfer:
+  Item item
+  Item destination
+
+Action:
+  String next_state
+  List transfers
+  List action_queries
+
+State:
+  String name
+  String description
+  Map actions
+
+Item:
+  String name
+  State current_state
+  Set inventory
+  Item parent
