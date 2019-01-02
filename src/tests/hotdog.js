@@ -1,30 +1,21 @@
-Ink = require('../ink2.js');
+Ink = require('../ink.js');
 
 Ink.setUniverse(`
 room {
-  default*: "A normal room";
-  |
-  go: default > default;
-  |
-  [protagonist, hotdog];
+  *default: 'a normal room';
 };
-
-protagonist {
-  awake*: "Basically the best";
-  asleep: "Zzz...";
-  |
-  fill: awake > asleep;
+room > hotdog {
+  *full: 'a normal hotdog' [eat: 'hotdog was eaten' -> halfeaten [hotdog fill $subject]];
+  halfeaten: 'a halfeaten hotdog';
 };
+room > player {
+  *hungry: 'a hungry hungry hippo' [go: 'got it' [player > $subject], _fill: 'mmm, delicious!' -> full];
+  full: 'a full belly';
+};
+`);
 
-hotdog {
-  whole*: "a nice stick of processed meat";
-  halved: "nomnom";
-  |
-  eat: whole > halved [fill];
-}`);
-
-Ink.exec("protagonist","take","hotdog");
-Ink.exec("protagonist","eat","hotdog");
+Ink.exec("player","take","hotdog");
+Ink.exec("player","eat","hotdog");
 // hotdog = model.subItems["hotdog"][0];
 // //console.log(hotdog);
 

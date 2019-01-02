@@ -23,11 +23,18 @@
 
 %%
 
+query_args
+    : query
+        { $$ = [$1]; }
+    | query "," query_args
+        { $$ = [$1].concat($3); }
+    ;
+
 query
     : NAME
-        { $$ = {"object":$1}; }
-    | "(" NAME "," query ")"
-        { $$ = {"function":$2,"query":$4}; }
+        { $$ = ["hasName",$1]; }
+    | NAME "(" query_args ")"
+        { $$ = [$1, $3]; }
     ;
 
 action_query
@@ -48,9 +55,9 @@ transition
     ;
 
 transfer
-    : ">" NAME
+    : ">" query
         { $$ = {"item":$2}; }
-    | NAME ">" NAME
+    | query ">" query
         { $$ = {"item":$3,"destination":$1}; }
     ;
 
@@ -80,9 +87,9 @@ effect
 
 action
     : NAME ":" STR 
-        { $$ = {"name":$1,"description":$3,"protected":$1[0] == "_"}; }
+        { $$ = {"name":$1[0] == "_" ? $1.slice(1) : $1,"description":$3,"protected":$1[0] == "_"}; }
     | NAME ":" STR effect
-        { $$ = {"name":$1,"description":$3,"protected":$1[0] == "_","effect":$4}; }
+        { $$ = {"name":$1[0] == "_" ? $1.slice(1) : $1,"description":$3,"protected":$1[0] == "_","effect":$4}; }
     ;
 
 actions
