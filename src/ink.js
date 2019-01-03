@@ -56,40 +56,40 @@ class Query {
   execute(context, globalArgs, root) {
     root = root || this.spec;
     console.log('EQ', context.size, globalArgs, 'r', root);
-    var fn = root[0];
+    let fn = root[0];
     if (!(fn in this.functions)) throw `Invalid query function: ${fn}`;
     let f = this.functions[fn];
-    var args = [];
+    let args = [];
     if (f.args == "query") {
-      for (var q of root.slice(1)) args.push(this.execute(context, globalArgs, q));
+      for (let q of root.slice(1)) args.push(this.execute(context, globalArgs, q));
     } else
-      for (var arg of root.slice(1)) args.push(arg[0] == "$" && globalArgs[arg] ? globalArgs[arg] : arg);
+      for (let arg of root.slice(1)) args.push(arg[0] == "$" && globalArgs[arg] ? globalArgs[arg] : arg);
     console.log('Q', globalArgs, fn)
     if (f.args == "query") {
-      for (var a of args) {
-        for (var e of a) {
+      for (let a of args) {
+        for (let e of a) {
           console.log('query arg', e.toString())
         }
       }
     } else {
-      for (var a of args) {
+      for (let a of args) {
         console.log('data arg', a.toString())
       }
     }
     //console.log(args);
-    var ans = f.impl(context, args);
-    for (var a of ans) console.log('ANS', a && a.toString());
+    let ans = f.impl(context, args);
+    for (let a of ans) console.log('ANS', a && a.toString());
     console.log('AQ', ans)
     return ans;
   }
   and(context, args) {
     // args = [ query0, query1, ... ]
     // ans = intersection(query0, query1, ...)
-    var elts = args[0];
-    var ans = new Set();
-    for (var e of elts) {
+    let elts = args[0];
+    let ans = new Set();
+    for (let e of elts) {
       let add = true;
-      for (var l of args.slice(1)) {
+      for (let l of args.slice(1)) {
         if (ans.has(e)) continue;
         if (!l.has(e)) {
           add = false;
@@ -103,9 +103,9 @@ class Query {
   or(context, args) {
     // args = [ query0, query1, ... ]
     // ans = union(query0, query1, ...)
-    var ans = new Set;
-    for (var l of args) {
-      for (var e of l) {
+    let ans = new Set;
+    for (let l of args) {
+      for (let e of l) {
         ans.add(e);
       }
     }
@@ -114,7 +114,7 @@ class Query {
   not(context, args) {
     // args = [ query0 ]
     let ans = new Set();
-    for (var [name, item] of context) {
+    for (let [name, item] of context) {
       if (!args[0].has(name)) ans.add(name);
     }
     return ans
@@ -125,20 +125,22 @@ class Query {
   }
   hasChild(context, args) {
     // args = [ query0 ]
-    var ans = new Set();
-
-    for (var item of args[0]) {
-      console.log('parent', context.get(item).parent);
-      ans.add(context.get(item).parent);
+    let ans = new Set();
+    for (let item_name of args[0]) {
+      let item = context.get(item_name);
+      let parent_name = (item.parent) ? item.parent.name : null;
+      console.log('parent', parent_name);
+      ans.add(parent_name);
     }
     return ans;
   }
   hasParent(context, args) {
     // args = [ query0 ]
-    var ans = new Set();
-    for (var [name, item] of context) {
-      for (var i of args[0]) {
-        if (item.parent == i) {
+    let ans = new Set();
+    for (let [name, item] of context) {
+      for (let item_name of args[0]) {
+        let parent_name = (item.parent) ? item.parent.name : null;
+        if (parent_name == item_name) {
           ans.add(name);
         }
       }
@@ -147,8 +149,8 @@ class Query {
   }
   stateIs(context, args) {
     // args = [ name_str ]
-    var ans = [];
-    for (var item of context) {
+    let ans = [];
+    for (let item of context) {
       if (item.current_state.name == args[0]) ans.push(item);
     }
     return ans;
@@ -204,13 +206,15 @@ class Transfer {
       '$object': object.name
     };
     let item = this.itemQuery.execute(context, args);
-    let dst = this.destinationQuery.execute(context, args);
+    let destination = this.destinationQuery.execute(context, args);
     // daniel -- these are returning the 1st values in the resulting array?
     item = context.get(item.values().next().value);
-    dst = context.get(dst.values().next().value);
-    context.get(item.parent).inventory.delete(item.name); // Remove item from current parent
-    item.parent = dst.name; // Set item parent to destination
-    dst.inventory.add(item.name); // Add item to destination inventory
+    destination = context.get(destination.values().next().value);
+    if (item.parent) {
+      item.parent.inventory.delete(item); // Remove item from current parent
+    }
+    item.parent = destination; // Set item parent to destination
+    destination.inventory.add(item); // Add item to destination inventory
   }
 
   toString(indentation) {
@@ -292,16 +296,17 @@ class Item {
 
   toString() {
     let str = `${this.name}:`;
-    str += `\n current state: ${this.current_state}\n parent: ${this.parent}\n states:\n`;
+    let parent_name = (this.parent) ? this.parent.name : null;
+    str += `\n current state: ${this.current_state}\n parent: ${parent_name}\n states:\n`;
     for (let [name, state] of this.states) {
       str += state.toString(2);
     }
-    str += `\n inventory: ` + Array.from(this.inventory).join(",");
+    str += `\n inventory: ` + Array.from(this.inventory, item => item.name).join(", ");
     return str;
   }
 }
 
-var dictionary = {
+let dictionary = {
   "go": new DictionaryEntry(
     ["move"],
     new ActionQuery("go",
@@ -333,25 +338,25 @@ var dictionary = {
     new ActionQuery("look"))
 }
 
-var universe = {};
+let universe = {};
 
 function getActionQuery(verb) {
-  for (var word in dictionary) {
+  for (let word in dictionary) {
     if (word != verb && dictionary[word].synonyms.indexOf(verb) < 0) continue;
     return dictionary[word].actionQuery;
   }
 }
 
 function exec(subject, verb, object) {
-  var actionQueries = {
+  let actionQueries = {
     'followers': [getActionQuery(verb)],
     'subject': subject,
     'object': object
   };
 
   while (actionQueries.followers.length > 0) {
-    var next_actions = [];
-    for (var aq of actionQueries.followers) {
+    let next_actions = [];
+    for (let aq of actionQueries.followers) {
       // Parse
       // (We're pretending already parsed into SVO)
 
@@ -361,7 +366,7 @@ function exec(subject, verb, object) {
       // Resolve objects
       actionQueries = aq.execute(universe, subject, object);
       for (let [n, u] of universe) console.log('AFTER', u.toString());
-      // for (var e of effects) {
+      // for (let e of effects) {
       // 	if (e.type == 'action') { // Queue follow-on actions for the next round
       // 	    let args = {
       // 		"$subject": action.subject
@@ -429,7 +434,8 @@ function json2obj(items) {
   }
   for (let [name, item] of model) {
     if (item.parent) {
-      model.get(item.parent).inventory.add(name);
+      item.parent = model.get(item.parent);
+      item.parent.inventory.add(item);
     }
   }
   return model;
