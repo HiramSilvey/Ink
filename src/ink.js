@@ -68,45 +68,36 @@ class Query {
     if (f.args == "query") {
       for (let a of args) {
         for (let e of a) {
-          console.log('query arg', e.toString())
+          console.log('query arg', e.name)
         }
       }
     } else {
       for (let a of args) {
-        console.log('data arg', a.toString())
+        console.log('data arg', a)
       }
     }
     //console.log(args);
     let ans = f.impl(context, args);
-    for (let a of ans) console.log('ANS', a && a.toString());
+    for (let a of ans) console.log('ANS', a.name);
     console.log('AQ', ans)
     return ans;
   }
   and(context, args) {
     // args = [ query0, query1, ... ]
     // ans = intersection(query0, query1, ...)
-    let elts = args[0];
-    let ans = new Set();
-    for (let e of elts) {
-      let add = true;
-      for (let l of args.slice(1)) {
-        if (ans.has(e)) continue;
-        if (!l.has(e)) {
-          add = false;
-          break;
-        }
-      }
-      if (add) ans.add(e);
+    let ans = args[0];
+    for (let items of args.slice(1)) {
+      ans = [...ans].filter(item => items.has(item));
     }
-    return ans;
+    return new Set(ans);
   }
   or(context, args) {
     // args = [ query0, query1, ... ]
     // ans = union(query0, query1, ...)
-    let ans = new Set;
-    for (let l of args) {
-      for (let e of l) {
-        ans.add(e);
+    let ans = new Set();
+    for (let items of args) {
+      for (let item of items) {
+        ans.add(item);
       }
     }
     return ans;
@@ -114,34 +105,36 @@ class Query {
   not(context, args) {
     // args = [ query0 ]
     let ans = new Set();
-    for (let [name, item] of context) {
-      if (!args[0].has(name)) ans.add(name);
+    for (let item of context.values()) {
+      if (!args[0].has(item)) {
+        ans.add(item);
+      }
     }
-    return ans
+    return ans;
   }
   hasName(context, args) {
     // args = [ name_str ]
-    return context.has(args[0]) ? new Set([args[0]]) : new Set();
+    return context.has(args[0]) ? new Set([context.get(args[0])]) : new Set();
   }
   hasChild(context, args) {
     // args = [ query0 ]
     let ans = new Set();
-    for (let item_name of args[0]) {
-      let item = context.get(item_name);
+    for (let item of args[0]) {
       let parent_name = (item.parent) ? item.parent.name : null;
       console.log('parent', parent_name);
-      ans.add(parent_name);
+      if (item.parent) {
+        ans.add(item.parent);
+      }
     }
     return ans;
   }
   hasParent(context, args) {
     // args = [ query0 ]
     let ans = new Set();
-    for (let [name, item] of context) {
-      for (let item_name of args[0]) {
-        let parent_name = (item.parent) ? item.parent.name : null;
-        if (parent_name == item_name) {
-          ans.add(name);
+    for (let item of context.values()) {
+      for (let query_item of args[0]) {
+        if (Object.is(item.parent, query_item)) {
+          ans.add(item);
         }
       }
     }
@@ -149,9 +142,11 @@ class Query {
   }
   stateIs(context, args) {
     // args = [ name_str ]
-    let ans = [];
-    for (let item of context) {
-      if (item.current_state.name == args[0]) ans.push(item);
+    let ans = new Set();
+    for (let item of context.values()) {
+      if (item.current_state.name == args[0]) {
+        ans.add(item);
+      }
     }
     return ans;
   }
@@ -163,6 +158,7 @@ class ActionQuery {
   constructor(verb, subjectQuery, objectQuery) {
     console.log('S', subjectQuery);
     console.log('O', objectQuery);
+    console.log('V', verb);
     this.subjectQuery = new Query(subjectQuery || ["hasName", "$subject"]);
     this.objectQuery = new Query(objectQuery || ["hasName", "$object"]);
     this.verb = verb;
@@ -179,8 +175,8 @@ class ActionQuery {
     if (action_subject.length > 1) throw "Ambiguous subject";
     if (action_object.length == 0) throw "No valid object";
     if (action_object.length > 1) throw "Ambiguous object";
-    let as = context.get(action_subject.values().next().value);
-    let ao = context.get(action_object.values().next().value);
+    let as = action_subject.values().next().value;
+    let ao = action_object.values().next().value;
     console.log(`SUB=${as.name}, VRB=${this.verb}, OBJ=${ao.name}`, args);
     return ao.act(context, as, this.verb, ao);
   }
@@ -208,8 +204,8 @@ class Transfer {
     let item = this.itemQuery.execute(context, args);
     let destination = this.destinationQuery.execute(context, args);
     // daniel -- these are returning the 1st values in the resulting array?
-    item = context.get(item.values().next().value);
-    destination = context.get(destination.values().next().value);
+    item = item.values().next().value;
+    destination = destination.values().next().value;
     if (item.parent) {
       item.parent.inventory.delete(item); // Remove item from current parent
     }
@@ -341,8 +337,10 @@ let dictionary = {
 let universe = {};
 
 function getActionQuery(verb) {
-  for (let word in dictionary) {
-    if (word != verb && dictionary[word].synonyms.indexOf(verb) < 0) continue;
+  for (let word of Object.keys(dictionary)) {
+    if (word != verb && dictionary[word].synonyms.indexOf(verb) < 0) {
+      continue;
+    }
     return dictionary[word].actionQuery;
   }
 }
@@ -401,7 +399,7 @@ function exec(subject, verb, object) {
   }
 }
 
-function json2obj(items) {
+function jsonToObject(items) {
   let model = new Map();
   for (let item of items) {
     let states = new Map();
@@ -441,12 +439,10 @@ function json2obj(items) {
   return model;
 }
 
-function setUniverse(spec) {
-  let jm = sdl_parser.parse(spec);
-  // console.log(jm);
-  console.log(JSON.stringify(jm, null, " "));
-  universe = json2obj(jm);
-  // console.log(universe);
+function setUniverse(specification) {
+  let json_model = sdl_parser.parse(specification);
+  // console.log(JSON.stringify(jm, null, " "));
+  universe = jsonToObject(json_model);
 }
 
 module.exports = {
