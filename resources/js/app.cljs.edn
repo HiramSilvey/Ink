@@ -1,3 +1,0 @@
-{:require  [ink.app]
- :init-fns [ink.app/init]
- :compiler-options {:asset-path "js/app.out"}}

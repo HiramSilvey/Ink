@@ -3,6 +3,7 @@
 
 \s+			          /* skip whitespace */
 [$a-zA-Z_][a-zA-Z_0-9]*                 return "NAME"
+[0-9]+                                  return "NUM"
 \'(?:[^'\\]|\\.)*\'|\"(?:[^"\\]|\\.)*\" yytext = yytext.substr(1,yyleng-2); return "STR"
 "{"                                     return "{"
 "}"                                     return "}"
@@ -24,7 +25,9 @@
 %%
 
 query_args
-    : query
+    : NUM
+        { $$ = [$1]; }
+    | query
         { $$ = [$1]; }
     | query "," query_args
         { $$ = [$1].concat($3); }
@@ -34,7 +37,9 @@ query
     : NAME
         { $$ = ["hasName",$1]; }
     | NAME "(" query_args ")"
-        { $$ = [$1, $3]; }
+        { $$ = [$1].concat($3); }
+    | NAME "(" ")"
+        { $$ = [$1]; }
     ;
 
 action_query
