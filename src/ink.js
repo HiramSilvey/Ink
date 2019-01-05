@@ -2,7 +2,7 @@ sdl_parser = require('./sdl.js');
 
 DEBUG = {
 				'game':true,
-				'exec':true,
+				'exec':false,
 				'query':false,
 				'actionquery':false,
 				'queryeval':false,
@@ -20,6 +20,7 @@ class DictionaryEntry {
 class Query {
 				constructor(spec) {
 								this.spec = spec;
+								dlog('query',this.spec);
 								this.signatures = {
 												"and":["queries"],
 												"or":["queries"],
@@ -212,17 +213,25 @@ class Query {
 class ActionQuery {
 				constructor(verb, subjectQuery, objectQuery) {
 								dlog('actionquery', 'S', subjectQuery);
-								dlog('actionquery', 'O', objectQuery);
+								dlog('actionquery', 'O', objectQuery || 'asd');
 								dlog('actionquery', 'V', verb);
 								this.subjectQuery = new Query(subjectQuery ? ["singleton",subjectQuery] : ["singleton",["hasName", "$subject"]]);
-								this.objectQuery = new Query(objectQuery || ["hasName", "$object"]);
+								this.objectQuery = new Query(objectQuery ? objectQuery : ["hasName", "$object"]);
 								this.verb = verb;
+								dlog('actionquery', 'S', this.subjectQuery.toString());
+								dlog('actionquery', 'O', this.objectQuery.toString());
+								dlog('actionquery', 'V', this.verb);
+								dlog('actionquery',this);
 				}
 				execute(context, subject, object) {
 								let args = {
 												"$subject": subject,
 												"$object": object
 								};
+								dlog('actionquery', 'executing...',this);
+								dlog('actionquery', 'S', this.subjectQuery.toString());
+								dlog('actionquery', 'O', this.objectQuery.toString());
+								dlog('actionquery', 'V', this.verb);
 								let action_subject = this.subjectQuery.execute(context, args);
 								let action_object = this.objectQuery.execute(context, args);
 								let as = action_subject.values().next().value; // subject is always a singleton so can get its value
@@ -231,7 +240,7 @@ class ActionQuery {
 												dlog('actionquery', `SUB=${as.name}, VRB=${this.verb}, OBJ=${ao.name}`, args);
 												let new_aqs = ao.act(context, as, this.verb, ao);
 												// If there are any new action queries to run, push them onto the list
-												if(new_aqs.followers.length > 0) ans.push(new_aqs);
+												if(new_aqs && 'followers' in new_aqs && new_aqs.followers.length > 0) ans.push(new_aqs);
 								}
 								return ans;
 				}
@@ -289,7 +298,7 @@ class Action { // lawsoot lawl
 
 								// Perform all specified transfers
 								for (let transfer of this.transfers) transfer.execute(context, subject, verb, object);
-
+								
 								// Return a list of ActionQuery objects for follow-on actions
 								return {
 												'followers': this.action_queries,
@@ -341,7 +350,11 @@ class Item {
 				}
 
 				act(context, subject, verb, object) {
-								return this.states.get(this.current_state).actions.get(verb).execute(context, subject, verb, object);
+								if(verb == "look") dlog('GAME',this.states.get(this.current_state).description);
+								else if(verb == "inventory") dlog('GAME',Array.from(this.inventory, item => item.name).join(", "))
+								let action = this.states.get(this.current_state).actions.get(verb);
+								if(action) return action.execute(context, subject, verb, object);
+								return {};
 				}
 
 				toString(verbose) {
@@ -359,12 +372,25 @@ class Item {
 				}
 }
 
+named_queries = {
+				"sibling":new Query(["hasParent", ["hasChild", ["hasName", "$subject"]]]),
+				"owned":new Query(["hasParent", ["hasName", "$subject"]])
+}
+
 let dictionary = {
 				"go": new DictionaryEntry(
 								["move"],
 								new ActionQuery("go",
 																								null, // the subject is just the unqualified subject
 																								["and", ["hasDescription", "$object"],	["sibling"]])), // Only go things that are in same room
+				"inventory": new DictionaryEntry(
+								["items"],
+								new ActionQuery("inventory", null, ["hasName", "$subject"])),
+				"look": new DictionaryEntry(
+								["observe", "behold"],
+								new ActionQuery("look",
+																								null, // the subject is just the unqualified subject
+																								["sibling"])), // Only see things that are in same room
 				"eat": new DictionaryEntry(
 								["devour", "gobble"],
 								new ActionQuery("eat",
@@ -376,13 +402,10 @@ let dictionary = {
 																								["and", ["hasDescription", "$object"],	["sibling"]], // Only take things in the same room
 																								["hasName", "$subject"])), // "take" is "go" with subject and object reversed
 				"scream": new DictionaryEntry(
-								["yell", "shout"],
+								["yell", "shout", "shriek"],
 								new ActionQuery("scream",
 																								null,
 																								["sibling"])), // scream affects only things in same room
-				"look": new DictionaryEntry(
-								["observe", "behold"],
-								new ActionQuery("look"))
 }
 
 let universe = {};
@@ -392,13 +415,14 @@ function getActionQuery(verb) {
 								if (word != verb && dictionary[word].synonyms.indexOf(verb) < 0) {
 												continue;
 								}
-								return dictionary[word].actionQuery;
+								if (word in dictionary) return [dictionary[word].actionQuery];
 				}
+				return [];
 }
 
 function exec(subject, verb, object) {
 				let actions = [{
-								'followers': [getActionQuery(verb)],
+								'followers': getActionQuery(verb),
 								'subject': subject,
 								'object': object
 				}];
@@ -407,6 +431,7 @@ function exec(subject, verb, object) {
 				while(actions.length > 0){
 								for (let a of actions) {
 												for(let aq of a.followers){
+																
 																dlog('GAME', `Action: ${a.subject} ${aq.verb} ${a.object}`);
 																dlog('EXEC', '=========[ EXEC ]=========');
 																dlog('EXCE', aq.toString());
@@ -429,6 +454,7 @@ function exec(subject, verb, object) {
 																for (let [n, u] of universe) dlog('exec',u.toString());
 												}
 								}
+								actions = actions.filter(a => a.followers.length > 0);
 				}
 }
 
@@ -481,11 +507,6 @@ function setUniverse(specification) {
 				dlog('uni',json_model);
 				dlog('universe',JSON.stringify(json_model, null, " "));
 				universe = jsonToObject(json_model);
-}
-
-named_queries = {
-				"sibling":new Query(["hasParent", ["hasChild", ["hasName", "$subject"]]]),
-				"owned":new Query(["hasParent", ["hasName", "$subject"]])
 }
 
 module.exports = {
