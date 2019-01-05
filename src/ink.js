@@ -2,6 +2,7 @@ sdl_parser = require('./sdl.js');
 
 DEBUG = {
 				'game':true,
+				'state':false,
 				'exec':false,
 				'query':false,
 				'actionquery':false,
@@ -147,7 +148,7 @@ class Query {
 								// args = [ name_str ]
 								let ans = new Set();
 								for (let item of context.values()) {
-												if (item.states.get(item.current_state).description.indexOf(args[0]) >= 0) {
+												if (item.current_state.description.indexOf(args[0]) >= 0) {
 																ans.add(item);
 												}
 								}
@@ -296,7 +297,7 @@ class Action { // lawsoot lawl
 				execute(context, subject, verb, object) {
 								dlog('GAME',this.description);
 								// Perform transition on object
-								if (this.next_state !== null) object.current_state = this.next_state;
+								if (this.next_state !== null) object.current_state = object.states.get(this.next_state);
 
 								// Perform all specified transfers
 								for (let transfer of this.transfers) transfer.execute(context, subject, verb, object);
@@ -322,6 +323,7 @@ class Action { // lawsoot lawl
 // States represent the current status of an item.
 class State {
 				constructor(name, description, actions) {
+								dlog('state',name,description);
 								this.name = name; // Used for debugging.
 								this.description = description; // The answer to "look".
 								this.actions = actions || {};
@@ -352,8 +354,8 @@ class Item {
 				}
 
 				act(context, subject, verb, object) {
-								if(verb == "look") dlog('GAME',this.states.get(this.current_state).description);
-								let action = this.states.get(this.current_state).actions.get(verb);
+								if(verb == "look") dlog('GAME',this.current_state.description);
+								let action = this.current_state.actions.get(verb);
 								if(action) return action.execute(context, subject, verb, object);
 								return {};
 				}
@@ -361,7 +363,7 @@ class Item {
 				toString(verbose) {
 								let str = `${this.name}:`;
 								let parent_name = (this.parent) ? this.parent.name : null;
-								str += `\n current state: ${this.current_state}\n parent: ${parent_name}`;
+								str += `\n current state: ${this.current_state.name}\n parent: ${parent_name}`;
 								if(verbose){
 												str += `\n states:`;
 												for (let [name, state] of this.states) {
@@ -445,7 +447,7 @@ function exec(subject, verb, object) {
 																								dlog('GAME', `Ambiguous "${object}".`);
 																				}
 																				else if(user_action && e == "nonexistent") {
-																								dlog('GAME', `What "${object}"?`);
+																								dlog('GAME', `Unknown "${object}".`);
 																				}
 																				else throw e;
 																				actions = [];
@@ -487,9 +489,11 @@ function jsonToObject(items) {
 																				actions.set(action.name, new Action(action.description, next_state, transfers, action_queries));
 																}
 												}
-												states.set(state.name, new State(state.name, state.description, actions));
+												let new_state = new State(state.name, state.description, actions)
+												states.set(new_state.name, new_state);
 												if (state.current) {
-																current_state = state.name;
+																//dlog('state',new_state.name, new_state.description);
+																current_state = new_state;
 												}
 								}
 								model.set(item.name, new Item(item.name, states, current_state, null, item.parent));

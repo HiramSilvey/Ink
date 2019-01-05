@@ -16,14 +16,14 @@ room > hotdog {
   *whole: 'a normal hotdog' [eat: 'hotdog was eaten' -> halfeaten [$object fill $subject]];
   halfeaten: 'a halfeaten hotdog';
 };
-room > poisonhotdog {
+room > rotdog {
   *whole: 'a green hotdog' [eat: 'poison hotdog was eaten' -> halfeaten [$object kill $subject]];
   halfeaten: 'a halfeaten green hotdog';
 };
 room > player {
   *hungry: 'a hungry hungry hippo' [go: 'got it' [player > $subject], _fill: 'mmm, delicious!' -> full, _kill: 'ew gross!' -> dead];
   full: 'a full belly';
-  dead: 'dead';
+  dead: 'ur dead lol';
 };
 `);
 
