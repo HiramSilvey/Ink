@@ -1,6 +1,8 @@
 sdl_parser = require('./sdl.js');
 
 DEBUG = {
+				'game':true,
+				'exec':true,
 				'query':false,
 				'actionquery':false,
 				'queryeval':false,
@@ -54,7 +56,7 @@ class Query {
 				}
 				execute(context, globalArgs, root) {
 								root = root || this.spec;
-								if(DEBUG.query) console.log('EQ', context.size, globalArgs, 'r', root);
+								dlog('query', context.size, globalArgs, 'r', root);
 								let fn = root[0];
 								if (root.length == 1 && fn in named_queries){
 												return named_queries[fn].execute(context, globalArgs);
@@ -90,22 +92,20 @@ class Query {
 								}
 
 								// Just debug things
-								if(DEBUG.query){
-												console.log('Q', globalArgs, fn)
-												if (this.signatures[fn] == "query") {
-																for (let a of args) {
-																				for (let e of a) {
-																								console.log('query arg', e.name)
-																				}
+								dlog('query', globalArgs, fn)
+								if (this.signatures[fn] == "query") {
+												for (let a of args) {
+																for (let e of a) {
+																				dlog('query', 'query arg', e.name);
 																}
-												} else if (this.signatures[fn] == "data") {
-																for (let a of args) {
-																				console.log('data arg', a)
-																}
+												}
+								} else if (this.signatures[fn] == "data") {
+												for (let a of args) {
+																dlog('query', 'data arg', a);
 												}
 								}
 								let ans = this[fn](context, args);
-								if(DEBUG.query) for (let a of ans) console.log('ANS', a.name);
+								for (let a of ans) dlog('query','ANS', a.name);
 								return ans;
 				}
 				and(context, args) {
@@ -129,7 +129,7 @@ class Query {
 								return ans;
 				}
 				not(context, args) {
-								// args = [ query0 ]
+								// args = [ query ]
 								let ans = new Set();
 								for (let item of context.values()) {
 												if (!args[0].has(item)) {
@@ -140,7 +140,13 @@ class Query {
 				}
 				hasDescription(context, args) {
 								// args = [ name_str ]
-								return [...context].filter(x => x.current_state.description.indexOf(args[0]) >= 0);
+								let ans = new Set();
+								for (let item of context.values()) {
+												if (item.states.get(item.current_state).description.indexOf(args[0]) >= 0) {
+																ans.add(item);
+												}
+								}
+								return ans;
 				}
 				hasName(context, args) {
 								// args = [ name_str ]
@@ -151,7 +157,7 @@ class Query {
 								let ans = new Set();
 								for (let item of args[0]) {
 												let parent_name = (item.parent) ? item.parent.name : null;
-												if(DEBUG.queryeval) console.log('parent', parent_name);
+												dlog('queryeval', 'parent', parent_name);
 												if (item.parent) {
 																ans.add(item.parent);
 												}
@@ -182,8 +188,8 @@ class Query {
 				}
 				singleton(context, args) {
 								// args = [ query ]
-								if(args[0].length == 0) throw "nonexistent";
-								if(args[0].length > 1) throw "ambiguous";
+								if(args[0].size == 0) throw "nonexistent";
+								if(args[0].size > 1) throw "ambiguous";
 								return args[0];
 				}
 				limit(context, args) {
@@ -201,11 +207,9 @@ class Query {
 // will, given a context, resolve the actor and direct object.
 class ActionQuery {
 				constructor(verb, subjectQuery, objectQuery) {
-								if(DEBUG.actionquery){
-												console.log('S', subjectQuery);
-												console.log('O', objectQuery);
-												console.log('V', verb);
-								}
+								dlog('actionquery', 'S', subjectQuery);
+								dlog('actionquery', 'O', objectQuery);
+								dlog('actionquery', 'V', verb);
 								this.subjectQuery = new Query(subjectQuery ? ["singleton",subjectQuery] : ["singleton",["hasName", "$subject"]]);
 								this.objectQuery = new Query(objectQuery || ["hasName", "$object"]);
 								this.verb = verb;
@@ -218,10 +222,14 @@ class ActionQuery {
 								let action_subject = this.subjectQuery.execute(context, args);
 								let action_object = this.objectQuery.execute(context, args);
 								let as = action_subject.values().next().value; // subject is always a singleton so can get its value
+								let ans = [];
 								for(let ao of action_object){
-												if(DEBUG.actionquery) console.log(`SUB=${as.name}, VRB=${this.verb}, OBJ=${ao.name}`, args);
-												return ao.act(context, as, this.verb, ao);
+												dlog('actionquery', `SUB=${as.name}, VRB=${this.verb}, OBJ=${ao.name}`, args);
+												let new_aqs = ao.act(context, as, this.verb, ao);
+												// If there are any new action queries to run, push them onto the list
+												if(new_aqs.followers.length > 0) ans.push(new_aqs);
 								}
+								return ans;
 				}
 				toString(indentation) {
 								let indent = " ".repeat(indentation);
@@ -352,19 +360,19 @@ let dictionary = {
 								["move"],
 								new ActionQuery("go",
 																								null, // the subject is just the unqualified subject
-																								["and", ["hasName", "$object"],	["sibling"]
+																								["and", ["hasDescription", "$object"],	["sibling"]
 																								])), // Only go things that are in same room
 				"eat": new DictionaryEntry(
 								["devour", "gobble"],
 								new ActionQuery("eat",
 																								null, // the subject is just the unqualified subject
-																								["and", ["hasName", "$object"],
+																								["and", ["hasDescription", "$object"],
 																									["hasParent", ["hasName", "$subject"]]
 																								])), // Only eat things that you have
 				"take": new DictionaryEntry(
 								["take", "grab"],
 								new ActionQuery("go",
-																								["and", ["hasName", "$object"],
+																								["and", ["hasDescription", "$object"],
 																									["sibling"]
 																								], // Only take things in the same room
 																								["hasName", "$subject"])), // "take" is "go" with subject and object reversed
@@ -390,25 +398,43 @@ function getActionQuery(verb) {
 }
 
 function exec(subject, verb, object) {
-				let actionQueries = {
+				let actions = [{
 								'followers': [getActionQuery(verb)],
 								'subject': subject,
 								'object': object
-				};
+				}];
 
-				while (actionQueries.followers.length > 0) {
-								let next_actions = [];
-								for (let aq of actionQueries.followers) {
-												console.log('=========[ EXEC ]=========');
-												console.log(aq.toString());
-												console.log('----| BEFORE |----')
-												for (let [n, u] of universe) console.log(u.toString());
-												actionQueries = aq.execute(universe, subject, object);
-												console.log('----| AFTER |----')
-												for (let [n, u] of universe) console.log(u.toString());
+				let user_action = true;
+				while(actions.length > 0){
+								for (let a of actions) {
+												for(let aq of a.followers){
+																dlog('GAME', `Action: ${a.subject} ${aq.verb} ${a.object}`);
+																dlog('EXEC', '=========[ EXEC ]=========');
+																dlog('EXCE', aq.toString());
+																dlog('EXEC', '----| BEFORE |----');
+																for (let [n, u] of universe) dlog('EXEC',u.toString());
+																try {
+																				actions = aq.execute(universe, a.subject, a.object);
+																} catch(e) {
+																				if(user_action && e == "ambiguous") {
+																								dlog('GAME', `Ambiguous "${object}".`);
+																				}
+																				else if(user_action && e == "nonexistent") {
+																								dlog('GAME', `What "${object}"?`);
+																				}
+																				else throw e;
+																				actions = [];
+																}
+																user_action = false;
+																dlog('EXEC','----| AFTER |----')
+																for (let [n, u] of universe) dlog('exec',u.toString());
+												}
 								}
-								actions = next_actions;
 				}
+}
+
+function dlog(){
+				if(DEBUG[arguments[0].toLowerCase()])	console.log.apply(console, arguments)
 }
 
 function jsonToObject(items) {
@@ -453,13 +479,13 @@ function jsonToObject(items) {
 
 function setUniverse(specification) {
 				let json_model = sdl_parser.parse(specification);
-				if(DEBUG.uni) console.log(jm);
-				if(DEBUG.universe) console.log(JSON.stringify(jm, null, " "));
+				dlog('uni',json_model);
+				dlog('universe',JSON.stringify(json_model, null, " "));
 				universe = jsonToObject(json_model);
 }
 
 named_queries = {
-				"sibling":new Query(["hasParent", ["hasChild", ["hasName", "$object"]]])
+				"sibling":new Query(["hasParent", ["hasChild", ["hasName", "$subject"]]])
 }
 
 module.exports = {
