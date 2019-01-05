@@ -351,7 +351,6 @@ class Item {
 
 				act(context, subject, verb, object) {
 								if(verb == "look") dlog('GAME',this.states.get(this.current_state).description);
-								else if(verb == "inventory") dlog('GAME',Array.from(this.inventory, item => item.name).join(", "))
 								let action = this.states.get(this.current_state).actions.get(verb);
 								if(action) return action.execute(context, subject, verb, object);
 								return {};
@@ -385,7 +384,7 @@ let dictionary = {
 																								["and", ["hasDescription", "$object"],	["sibling"]])), // Only go things that are in same room
 				"inventory": new DictionaryEntry(
 								["items"],
-								new ActionQuery("inventory", null, ["hasName", "$subject"])),
+								new ActionQuery("look", null, ["hasParent",["hasName", "$subject"]])),
 				"look": new DictionaryEntry(
 								["observe", "behold"],
 								new ActionQuery("look",
