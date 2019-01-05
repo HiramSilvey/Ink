@@ -37,7 +37,7 @@ class Query {
 								let self = this;
 								let strBuilder = function (root) {
 												let fn = root[0];
-												if(root.length == 1 && fn in named_queries) return `${fn}()`;
+												if(fn in named_queries) return `${fn}(${root.slice(1).join(",")})`;
 												if(!fn in self.signatures)	throw `Invalid query function: ${fn}`;
 												let args = [];
 												let params = root.slice(1);
@@ -58,8 +58,12 @@ class Query {
 								root = root || this.spec;
 								dlog('query', context.size, globalArgs, 'r', root);
 								let fn = root[0];
-								if (root.length == 1 && fn in named_queries){
-												return named_queries[fn].execute(context, globalArgs);
+								if (fn in named_queries){
+												let args = {};
+												let i = 1;
+												Object.assign(args, globalArgs);
+												root.slice(1).forEach(a => args[`$${i++}`] = a);
+												return named_queries[fn].execute(context, args);
 								}
 								if (!(fn in this.signatures)) throw `Invalid query function: ${fn}`;
 								let args = [];
@@ -360,27 +364,22 @@ let dictionary = {
 								["move"],
 								new ActionQuery("go",
 																								null, // the subject is just the unqualified subject
-																								["and", ["hasDescription", "$object"],	["sibling"]
-																								])), // Only go things that are in same room
+																								["and", ["hasDescription", "$object"],	["sibling"]])), // Only go things that are in same room
 				"eat": new DictionaryEntry(
 								["devour", "gobble"],
 								new ActionQuery("eat",
 																								null, // the subject is just the unqualified subject
-																								["and", ["hasDescription", "$object"],
-																									["hasParent", ["hasName", "$subject"]]
-																								])), // Only eat things that you have
+																								["singleton", ["and", ["hasDescription", "$object"],	["owned"]]])), // Only eat things that you have
 				"take": new DictionaryEntry(
 								["take", "grab"],
 								new ActionQuery("go",
-																								["and", ["hasDescription", "$object"],
-																									["sibling"]
-																								], // Only take things in the same room
+																								["and", ["hasDescription", "$object"],	["sibling"]], // Only take things in the same room
 																								["hasName", "$subject"])), // "take" is "go" with subject and object reversed
 				"scream": new DictionaryEntry(
 								["yell", "shout"],
 								new ActionQuery("scream",
 																								null,
-																								["hasParent", ["hasChild", ["hasName", "$subject"]]])), // scream affects only things in same room
+																								["sibling"])), // scream affects only things in same room
 				"look": new DictionaryEntry(
 								["observe", "behold"],
 								new ActionQuery("look"))
@@ -485,7 +484,8 @@ function setUniverse(specification) {
 }
 
 named_queries = {
-				"sibling":new Query(["hasParent", ["hasChild", ["hasName", "$subject"]]])
+				"sibling":new Query(["hasParent", ["hasChild", ["hasName", "$subject"]]]),
+				"owned":new Query(["hasParent", ["hasName", "$subject"]])
 }
 
 module.exports = {
