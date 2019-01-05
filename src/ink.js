@@ -284,15 +284,17 @@ class Transfer {
 }
 
 class Action { // lawsoot lawl
-				constructor(next_state, transfers, action_queries) {
+				constructor(description, next_state, transfers, action_queries) {
 								// Execution must interpret a null next_state as not changing the state's
 								// current_state.
+								this.description = description;
 								this.next_state = next_state || null;
 								this.transfers = transfers || [];
 								this.action_queries = action_queries || [];
 				}
 
 				execute(context, subject, verb, object) {
+								dlog('GAME',this.description);
 								// Perform transition on object
 								if (this.next_state !== null) object.current_state = this.next_state;
 
@@ -482,7 +484,7 @@ function jsonToObject(items) {
 																				if (action.effect.hasOwnProperty('action_queries')) { 
 																								action_queries = action.effect.action_queries.map(action_query => new ActionQuery(action_query.verb, action_query.subject, action_query.object));
 																				}
-																				actions.set(action.name, new Action(next_state, transfers, action_queries));
+																				actions.set(action.name, new Action(action.description, next_state, transfers, action_queries));
 																}
 												}
 												states.set(state.name, new State(state.name, state.description, actions));
