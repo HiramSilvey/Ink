@@ -381,6 +381,11 @@ named_queries = {
 }
 
 let dictionary = {
+				"use": new DictionaryEntry(
+								["activate", "touch"],
+								new ActionQuery("use",
+																								null, // the subject is just the unqualified subject
+																								["and", ["hasDescription", "$object"],	["sibling"]])), // Only go things that are in same room
 				"go": new DictionaryEntry(
 								["move"],
 								new ActionQuery("go",
