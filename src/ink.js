@@ -398,7 +398,7 @@ let dictionary = {
 								["observe", "behold"],
 								new ActionQuery("look",
 																								null, // the subject is just the unqualified subject
-																								["sibling"])), // Only see things that are in same room
+																								["or", ["sibling"], ["hasChild", ["hasName", "$subject"]]])), // Only see the container and things that are in it
 				"eat": new DictionaryEntry(
 								["devour", "gobble"],
 								new ActionQuery("eat",
