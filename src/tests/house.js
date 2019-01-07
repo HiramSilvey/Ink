@@ -10,12 +10,12 @@ const rl = readline.createInterface({
 
 Ink.setUniverse(`
 room {
-  *default: 'the living room';
+  *default: 'the living room' [go: '' [$object > $subject]];
 };
 
 kitchen {
-  *default: 'a beautiful kitchen' [enlighten: '' -> lit];
-  lit: 'a beautiful, well-lit kitchen' [endarken: '' -> default];
+  *default: 'a beautiful kitchen' [enlighten: '' -> lit, go: '' [$object > $subject]];
+  lit: 'a beautiful, well-lit kitchen' [endarken: '' -> default, go: '' [$object > $subject]];
 };
 
 kitchen > lamp {
