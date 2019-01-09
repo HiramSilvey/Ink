@@ -1,0 +1,12 @@
+parsing and action queries
+currently action queries do parsing and execution
+eventually we will want a dedicated parsing function (parseymcparseface?)
+what will an action query be in that world?
+
+refactoring of items
+item:
+  properties:
+    map {name: type}
+  actions:
+    map {name: (conditions, effects)} // effects are not limited to current transitions, 
+                                      // can be updates to properties (money++)
