@@ -1,0 +1,154 @@
+func (i PropertyValue) Describe() string {
+	if i.constraint_type == 0 {
+		return string(i.value)
+	} else if i.constraint_type == 2 {
+		return i.valid_values[i.value]
+	}
+}
+
+// returns true if setting is valid
+func (i PropertyValue) SetTo(v int) bool {
+	// unconstrained
+	if constraint_type == 0 { 
+		value = v
+		return true
+	}
+	// ...
+}
+
+type Item struct {
+	Name string
+	Description map[string]map[PropertyValue]string   // name+value -> string description
+	Properties map[string]PropertyValue // name:value
+	Inventory []Item                    // list of Item
+	Actions map[string]Action           // verb -> action
+}
+
+type PropertyValue struct { // lol tax
+	constraint_type int // 0: unconstraint, 1: range-bounded, 2: valid value
+	value int
+	lower_bound int
+	upper_bound int
+	valid_values []int
+	descriptions map[int]string
+}
+
+type PropertyUpdate struct {
+	subject *Query                 // Whose property are we updating
+	name string                    // Which property are we updating
+	update PropertyUpdateOperation // What to do to the value
+}
+
+type PropertyUpdateOperation {
+	operation PropertyOperation
+	value int
+}
+
+const (
+	PropertySet PropertyOperation = iota + 1
+	PropertyAdd
+)
+
+
+// "Action" answers "What does 'eat' mean for me?"
+// "ActionTemplate" answers "What does 'eat' mean in general: how to figure out what actual item to eat when someone says 'eat ___'"
+
+// To resolve "eat hotdog":
+// * Use the ActionTemplate Dictionary["eat"] to resolve the subject and object(s) of the action to actual items
+// * Having now in hand the Subject Item and Object []Item, go to the Subject Item and get its Action Actions["Eat"]
+// * Use this Action["eat"] to determine the effects/transfers based on the actual resolved Subject Item and Objects []Item
+//   * Execute transfers
+//   * Execute property updates 
+//   * Execute follow-on actions (using each pair Subject, ob for ob in Objects)
+
+var Dictionary map[string]ActionTemplate
+
+type ActionTemplate struct {
+	subject_query Query
+	object_query Query
+	verb string
+}
+
+type Action struct {
+	transfers []Transfer
+	property_updates []PropertyUpdate
+	follow_on_actions []ActionTemplate
+}
+
+type Transfer struct {
+	item_to_transfer Query
+	destination Query
+}
+
+type Query struct {
+	operation QueryOperation
+	params []*Query
+	constant_int int
+	constant_string string
+}
+
+const (
+	Limit QueryOperation = iota + 1
+	And
+	Or
+	Not
+	HasDescription
+	HasChild
+	HasParent
+	HasName
+	PropertyGreater
+	PropertyLess
+	PropertyEqual
+	EnteredObject
+	EnteredSubject
+	EnteredVerb
+	ConstantInt
+	ConstantString
+)
+
+//eat := Compile("Limit(And(HasDescription(EnteredObject()),HasParent(HasName(EnteredSubject()))),ConstantInt(constant_int=1))")
+
+
+Dictionary["eat"] = &ActionTemplate{
+	object_query: &Query{
+		operation: Limit
+		params: []*Query{
+			&Query{
+				operation: And
+				params: []*Query {
+					&Query{
+						operation: HasDescription
+						params: []*Query {
+							&Query {
+								operation: EnteredObject
+							}
+						}
+					},
+					&Query{
+						operation: HasParent
+						params: []*Query {
+							&Query {
+								operation: EnteredSubject
+							}
+						}
+						
+					}
+				}
+			},
+			&Query {
+				operation: ConstantInt
+				constant_int: 1
+			}
+		}
+	}
+}
+
+type QueryResult []Item
+
+QueryMap map[QueryOperation]func(params []QueryResult) QueryResult
+
+// Apply the query operation to the 
+
+
+Dictionary: verb->ActionTemplate
+State: verb->Action
