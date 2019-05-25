@@ -1,6 +1,7 @@
 # Ink
 
 Wordplay: A general interactive text game engine.
+
 Wordsmith: A tool to easily write general interactive text games.
 
 ## Usage
