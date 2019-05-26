@@ -1,16 +1,5 @@
 package main
 
-type Query struct {
-	operation QueryOperation
-	params []*Query
-	constant_int int
-	constant_string string
-}
-
-type QueryResult []Item
-
-QueryMap map[QueryOperation]func(params []QueryResult) QueryResult
-
 const (
 	Limit QueryOperation = iota
 	And
@@ -29,3 +18,18 @@ const (
 	ConstantInt
 	ConstantString
 )
+
+type Query struct {
+	operation QueryOperation
+	params []*Query
+	constant_int int
+	constant_string string
+}
+
+type QueryResult []Item
+
+func (q Query) Execute() (QueryResult, bool) {
+	// TODO
+}
+
+QueryMap map[QueryOperation]func(params []QueryResult) QueryResult
