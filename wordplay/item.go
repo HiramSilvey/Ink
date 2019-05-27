@@ -3,8 +3,10 @@ package main
 import "strings"
 
 type Item struct {
-	name string
+	name string                         // non-unique
+	description string
 	properties map[string]PropertyValue // name:value
+	parent *Item
 	inventory []Item                    // list of Item
 	actions map[string]Action           // verb -> action
 }
