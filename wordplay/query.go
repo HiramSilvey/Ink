@@ -14,9 +14,10 @@ const (
 	PropertyGreater
 	PropertyLess
 	PropertyEqual
-	EnteredObject
-	EnteredSubject
-	EnteredVerb
+	RequestObject
+	RequestSubject
+	RequestPreposition
+	RequestPrepositionObject
 	ConstantInt
 	ConstantString
 )
@@ -34,3 +35,4 @@ func (q Query) Execute() ([]Item, bool) {
 }
 
 type QueryMap map[QueryOperation]func(items []Item) Item
+

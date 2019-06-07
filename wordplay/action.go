@@ -29,24 +29,55 @@ func (t Transfer) Execute() bool {
 	return false
 }
 
+// Represents the description of the context in which a particular action is to be taken
+type ActionRequest struct {
+	subject string
+	object string
+	verb string
+	preposition string
+	preposition_object string
+}
+
+// Represents the meaning of an action
 type ActionResolver struct {
 	subject Query
 	object Query
 	verb string
 }
 
-type Action struct {
+type ToDo struct {
+	resolver ActionResolver
+	request ActionRequest
+}
+
+// Represents things that happen
+type Effect struct {
 	transfers []Transfer
 	property_updates []PropertyUpdate
 	follow_on_effects []ActionResolver
 }
 
-func (ar ActionResolver) Resolve() (Action, bool) {
+func (ar ActionResolver) Resolve(req ActionRequest) ([]Effect, bool) {
 	// TODO
-	return Action{}, true
+	
+	// Get the subject and object(s) requested
+	subject := ar.subject.execute(req) // need to ensure there
+	objects := ar.subject.execute(req)
+	effects := []Effect{}
+	
+	
+	for obj := range objects {
+		e, ok := obj.Actions[req.verb]
+		if !ok {
+			return effects, false
+		}
+		effects = append(effects, e)
+		
+	}
+	return effects, true
 }
 
-func (a Action) Execute() bool {
+func (e Effect) Execute() bool {
 	// TODO
 	return true
 }
