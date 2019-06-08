@@ -1,5 +1,7 @@
 package main
 
+// TODO: PropertyError
+
 type PropertyValue struct { // lol tax
 	constraint_type int // 0: unconstrained, 1: range-bounded, 2: valid value
 	value int

@@ -30,7 +30,7 @@ func (t Transfer) Execute() bool {
 }
 
 // Represents the description of the context in which a particular action is to be taken
-type ActionRequest struct {
+type Phrase struct {
 	subject string
 	object string
 	verb string
@@ -39,10 +39,9 @@ type ActionRequest struct {
 }
 
 // Represents the meaning of an action
-type ActionResolver struct {
+type Interpretation struct {
 	subject Query
 	object Query
-	verb string
 }
 
 type ToDo struct {
@@ -54,7 +53,20 @@ type ToDo struct {
 type Effect struct {
 	transfers []Transfer
 	property_updates []PropertyUpdate
-	follow_on_effects []ActionResolver
+	follow_on_todos []ToDo
+}
+
+func (p Phrase) Execute() {
+	it,ok := Dictionary[p.verb]
+	
+}
+
+// Returns actual Item subject and Item objects based on the string
+// subject and object in the Phrase
+//
+// TODO: Decide on whether multiple subjects should be allowed
+func (it Interpretation) Apply(p Phrase) (Item, []Item) {
+	return (it.subject.execute(p), ar.subject.execute(req))
 }
 
 func (ar ActionResolver) Resolve(req ActionRequest) ([]Effect, bool) {
@@ -82,4 +94,3 @@ func (e Effect) Execute() bool {
 	return true
 }
 
-var Dictionary map[string]ActionResolver

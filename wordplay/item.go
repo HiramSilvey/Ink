@@ -18,3 +18,8 @@ func (i Item) Describe() string {
 	}
 	return i.name + " (" + strings.Join(desc, ", ") + ")"
 }
+
+// Performs an action specified by a verb and an object
+func (i Item) Act(verb string, actor Item) {
+	
+}
