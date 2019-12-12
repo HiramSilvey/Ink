@@ -114,6 +114,59 @@ func (u *Universe) GetItem(name string) *Item {
 	return i
 }
 
+func (u *Universe) FindItem(name string) *Item {
+	if ans, ok := u.Items[name]; ok {
+		return ans
+	}
+	return nil
+}
+
+func (u *Universe) Describe() string {
+	ans := ""
+	ans += "Items:\n"
+	for _, i := range u.Items {
+		ans += i.Describe()
+	}
+	
+	return ans
+}
+
+func (i *Item) Describe() string {
+	ans := fmt.Sprintf("Name: %s\nDescription: %s\n", i.Name, i.Description)
+	if i.Parent != nil {
+		ans += fmt.Sprintf("Parent: %s\n", i.Parent.Name)
+	}
+	if len(i.StatePropertyValues) > 0 || len(i.NumPropertyValues) > 0 {
+		ans += "Properties: \n"
+		for name, val := range i.StatePropertyValues {
+			ans += fmt.Sprintf("%s: %s\n", name, val)
+		}
+		for name, val := range i.NumPropertyValues {
+			ans += fmt.Sprintf("%s: %d\n", name, val)
+		}
+	}
+	// if len(i.Inventory) > 0 {
+	// 	ans += "Inventory: \n"
+	// 	for name, child := range i.Inventory {
+	// 		ans += fmt.Sprintf("%s: %s\n", name, child.Name)
+	// 	}
+	// }
+	return ans
+}
+
+func (u *Universe) Look(i *Item) string {
+	ans := "You can see:\n"
+	for _, target := range u.Items {
+		if i.CanReach(target) && target != i {
+			ans += target.Describe()
+		}
+	}
+	if i.Parent != nil {
+		ans += i.Parent.Describe()
+	}
+	return ans
+}
+
 func (actor *Item) CheckCondition(c *Condition) bool {
 	if c.Type == CONDITION_PROPIS {
 		if actor.HasNumProperty(c.PropName) {
@@ -139,27 +192,44 @@ func (actor *Item) CheckCondition(c *Condition) bool {
 	return false
 }
 
+func (e *Effect) Describe() string {
+	if e.Type == EFFECT_CHANGE {
+		return fmt.Sprintf("%s change %s to %s", e.ActorName, e.PropName, e.NewVal)
+	} else if e.Type == EFFECT_DO {
+		return fmt.Sprintf("%s do %s to %s", e.ActorName, e.Verb, e.DirObj)
+	} else if e.Type == EFFECT_ADD {
+		return fmt.Sprintf("%s add %d to %s", e.ActorName, e.ToAdd, e.PropName)
+	} else if e.Type == EFFECT_GET {
+		return fmt.Sprintf("%s get %s", e.ActorName, e.Target)
+	} else if e.Type == EFFECT_DROP {
+		return fmt.Sprintf("%s drop %s", e.ActorName, e.Target)
+	} else if e.Type == EFFECT_DESCRIBE {
+		return fmt.Sprintf("say %s", e.Message)
+	}
+	return "Other"
+}
+
 func (u *Universe) RunEffect(e *Effect) []*Effect {
 	if e.Type == EFFECT_DESCRIBE {
 		fmt.Println(e.Message)
 	} else {
-		actor := u.GetItem(e.ActorName)
+		actor := u.FindItem(e.ActorName)
 		if e.Type == EFFECT_CHANGE {
-			if actor.HasStateProperty(e.PropName) && actor.StatePropertyValues[e.PropName] == e.OldVal {
+			if actor.HasStateProperty(e.PropName) {
 				actor.StatePropertyValues[e.PropName] = e.NewVal
 			}
 		} else if e.Type == EFFECT_DO {
-			return actor.RunAction(e.Verb, u.GetItem(e.DirObj))
+			return actor.RunAction(e.Verb, u.FindItem(e.DirObj))
 		} else if e.Type == EFFECT_ADD {
 			if actor.HasNumProperty(e.PropName) {
 				actor.NumPropertyValues[e.PropName] += e.ToAdd
 			}
 		} else if e.Type == EFFECT_GET {
-			if target := u.GetItem(e.Target); target != nil {
+			if target := u.FindItem(e.Target); target != nil {
 				actor.Inventory[target.Name] = target
 			}
 		} else if e.Type == EFFECT_DROP {
-			if target := u.GetItem(e.Target); target != nil {
+			if target := u.FindItem(e.Target); target != nil {
 				delete(actor.Inventory, target.Name)
 			}
 		}
@@ -169,13 +239,17 @@ func (u *Universe) RunEffect(e *Effect) []*Effect {
 
 func (i *Item) CanReach(target *Item) bool {
 	if _, ok := i.Inventory[target.Name]; !ok {
-		_, ok2 := i.Parent.Inventory[target.Name]
-		return ok2
+		if i.Parent != nil {
+			_, ok2 := i.Parent.Inventory[target.Name]
+			return ok2
+		}
+		return false
 	}
 	return true
 }
 
 func (i *Item) RunAction(verb string, dirobj *Item) []*Effect {
+	fmt.Println("running action",verb,dirobj)
 	ans := []*Effect{}
 	for _, a := range i.Actions {
 		if a.Verb == verb && (dirobj == a.DirObj || i.CanReach(dirobj)) && (a.Cond == nil || i.CheckCondition(a.Cond)) {
@@ -187,6 +261,7 @@ func (i *Item) RunAction(verb string, dirobj *Item) []*Effect {
 
 func (i *Item) AddChild(child *Item) {
 	i.Inventory[child.Name] = child
+	child.Parent = i
 }
 
 func (i *Item) HasChild(child *Item) bool {
@@ -199,7 +274,9 @@ func (i *Item) AddNumProperty(propname, description string) {
 }
 
 func (i *Item) AddStateProperty(propname, propval, description string) {
-	i.StateProperties[propname] = &StateProperty{Values: make(map[string]string)}
+	if _, ok := i.StateProperties[propname]; !ok {
+		i.StateProperties[propname] = &StateProperty{Values: make(map[string]string)}
+	}
 	i.StateProperties[propname].Values[propval] = description
 }
 
@@ -241,12 +318,23 @@ func (i *Item) SetStatePropertyValue(propname string, propval string) {
 	}
 }
 
-
-
-// func (i *Item) Describe() string {
-// 	var desc []string
-// 	for pname, pval := range i.properties {
-// 		desc = append(desc, pname + ": " + pval.Describe())
-// 	}
-// 	return i.name + " (" + strings.Join(desc, ", ") + ")"
-// }
+func (u *Universe) Do(verb, dirobj string) {
+	fmt.Println("=====ACTION=====\nplayer", verb, dirobj)
+	player := u.FindItem("player")
+	obj := u.FindItem(dirobj)
+	if obj != nil && !player.CanReach(obj) {
+		fmt.Println("No",dirobj,"accessible")
+		return
+	}
+	effects := player.RunAction(verb, obj)
+	for len(effects) > 0 {
+		new_effects := []*Effect{}
+		for _, eff := range effects {
+			fmt.Println("-- effect:",eff.Describe())
+			new_effects = append(new_effects, u.RunEffect(eff)...)
+		}
+		effects = new_effects
+	}
+	fmt.Println(player.Parent)
+	fmt.Println("---AFTERMATH---\n",u.Look(player))
+}
