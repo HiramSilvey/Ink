@@ -3,6 +3,7 @@ package universe
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"math"
 )
 
@@ -80,7 +81,7 @@ type Item struct {
 
 type Result struct {
 	Description string
-	Cond []*Condition
+	Cond *Condition
 }
 
 type Universe struct {
@@ -94,11 +95,11 @@ func MakeUniverse() *Universe {
 	return &Universe{Items: make(map[string]*Item), Wins: []*Result{}, Loses: []*Result{}}
 }
 
-func (u *Universe) AddLoseCondition(description string, c []*Condition) {
+func (u *Universe) AddWinCondition(description string, c *Condition) {
 	u.Wins = append(u.Wins, &Result{Description: description, Cond: c})
 }
 
-func (u *Universe) AddWinCondition(description string, c []*Condition) {
+func (u *Universe) AddLoseCondition(description string, c *Condition) {
 	u.Loses = append(u.Loses, &Result{Description: description, Cond: c})
 }
 
@@ -174,7 +175,7 @@ func (u *Universe) Look(i *Item) string {
 }
 
 func (u *Universe) CheckCondition(c *Condition) bool {
-	fmt.Println("check",c)
+	fmt.Println("check",c.Describe())
 	actor := u.FindItem(c.ActorName)
 	if c.Type == CONDITION_PROPIS {
 		if actor.HasNumProperty(c.PropName) {
@@ -246,6 +247,42 @@ func (e *Effect) Describe() string {
 	return "Other"
 }
 
+func (c *Condition) Describe() string {
+	if c.Type == CONDITION_PROPIS {
+		return fmt.Sprintf("%s %s is %s", c.ActorName, c.PropName, c.PropVal)
+	} else if c.Type == CONDITION_PROPGT {
+		return fmt.Sprintf("%s %s > %s", c.ActorName, c.PropName, c.PropVal)
+	} else if c.Type == CONDITION_PROPLT {
+		return fmt.Sprintf("%s %s < %s", c.ActorName, c.PropName, c.PropVal)
+	} else if c.Type == CONDITION_HAS {
+		return fmt.Sprintf("%s has %s", c.ActorName, c.ChildName)
+	} else if c.Type == CONDITION_ALL {
+		scs := []string{}
+		for _, sc := range c.Subconditions {
+			scs = append(scs, sc.Describe())
+		}
+		return fmt.Sprintf("all(%s)", strings.Join(scs,","))
+	} else if c.Type == CONDITION_NOTALL {
+		scs := []string{}
+		for _, sc := range c.Subconditions {
+			scs = append(scs, sc.Describe())
+		}
+		return fmt.Sprintf("notall(%s)", strings.Join(scs,","))
+	} else if c.Type == CONDITION_ANY {
+		scs := []string{}
+		for _, sc := range c.Subconditions {
+			scs = append(scs, sc.Describe())
+		}
+		return fmt.Sprintf("any(%s)", strings.Join(scs,","))
+	} else if c.Type == CONDITION_NOTANY {
+		scs := []string{}
+		for _, sc := range c.Subconditions {
+			scs = append(scs, sc.Describe())
+		}
+		return fmt.Sprintf("notany(%s)", strings.Join(scs,","))
+	}
+	return ""
+}
 func (u *Universe) RunEffect(e *Effect) []*Effect {
 	if e.Type == EFFECT_DESCRIBE {
 		fmt.Println(e.Message)
@@ -264,6 +301,7 @@ func (u *Universe) RunEffect(e *Effect) []*Effect {
 		} else if e.Type == EFFECT_GET {
 			if target := u.FindItem(e.Target); target != nil {
 				actor.Inventory[target.Name] = target
+				target.Parent = actor
 			}
 		} else if e.Type == EFFECT_DROP {
 			if target := u.FindItem(e.Target); target != nil {
@@ -374,6 +412,22 @@ func (u *Universe) Do(verb, dirobj string) string {
 		effects = new_effects
 	}
 	fmt.Println(player.Parent)
+	fmt.Println("checking loses")
+	for _, r := range u.Loses {
+		if u.CheckCondition(r.Cond) {
+			fmt.Println("LOSE")
+			fmt.Println(r.Description)
+			return "LOSE"
+		}
+	}
+	fmt.Println("checking wins")
+	for _, r := range u.Wins {
+		if u.CheckCondition(r.Cond) {
+			fmt.Println("WIN")
+			fmt.Println(r.Description)
+			return "WIN"
+		}
+	}
 	fmt.Println("---AFTERMATH---\n",u.Look(player))
 	return u.Look(player)
 }

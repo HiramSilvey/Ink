@@ -33,7 +33,7 @@ Usage:
 		return &Effect{Type: EFFECT_DO, ActorName: args["<item>"].(string), Verb: args["<verb>"].(string), DirObj: args["<directobj>"].(string)}, nil
 	} else if args["add"].(bool) {
 		num := args["<num>"].(string)
-		strings.Replace(num, "m", "-", 0)
+		num = strings.ReplaceAll(num, "m", "-")
 		to_add, err := strconv.Atoi(num)
 		if err != nil {
 			return nil, err
@@ -113,8 +113,8 @@ Usage:
   obj <item> property <propname> is <propval>
   obj <item> can <verb> <directobj> then <effects>...
   obj <item> can <verb> <directobj> if <condition> then <effects>...
-  obj win <description> if <conditions>...
-  obj lose <description> if <conditions>...
+  obj win <description> if <condition>
+  obj lose <description> if <condition>
 `
 	u := MakeUniverse()
 	
@@ -130,27 +130,21 @@ Usage:
 			fmt.Println("Line",lineno,":",l,">>> Error:",err)
 		} else {
 			if args["win"].(bool) {
-				conds := []*Condition{}
-				for _, cond_str := range args["<conditions>"].([]string) {
-					cond, err := ParseCondition(cond_str)
-					if err != nil {
-						fmt.Println("Line",lineno,":",l,">>> Condition: ",cond_str,">>> Error:",err)
-						continue
-					}
-					conds = append(conds, cond)
+				cond_str := args["<condition>"].(string)
+				cond, err := ParseCondition(cond_str)
+				if err != nil {
+					fmt.Println("Line",lineno,":",l,">>> Condition: ",cond_str,">>> Error:",err)
+					continue
 				}
-				u.AddWinCondition(args["<description>"].(string), conds)
+				u.AddWinCondition(args["<description>"].(string), cond)
 			} else if args["lose"].(bool) {
-				conds := []*Condition{}
-				for _, cond_str := range args["<conditions>"].([]string) {
-					cond, err := ParseCondition(cond_str)
-					if err != nil {
-						fmt.Println("Line",lineno,":",l,">>> Condition: ",cond_str,">>> Error:",err)
-						continue
-					}
-					conds = append(conds, cond)
+				cond_str := args["<condition>"].(string)
+				cond, err := ParseCondition(cond_str)
+				if err != nil {
+					fmt.Println("Line",lineno,":",l,">>> Condition: ",cond_str,">>> Error:",err)
+					continue
 				}
-				u.AddLoseCondition(args["<description>"].(string), conds)
+				u.AddLoseCondition(args["<description>"].(string), cond)
 			} else {
 				item := u.GetItem(args["<item>"].(string))
 				if args["is"].(bool) && !args["property"].(bool) {
