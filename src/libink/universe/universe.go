@@ -22,6 +22,10 @@ const (
 	CONDITION_PROPGT
 	CONDITION_PROPLT
 	CONDITION_HAS
+	CONDITION_ALL
+	CONDITION_ANY
+	CONDITION_NOTALL
+	CONDITION_NOTANY
 )
 
 type Effect struct {
@@ -43,6 +47,7 @@ type Condition struct {
 	PropName string
 	PropVal string
 	ChildName string
+	Subconditions []*Condition
 }
 
 type StateProperty struct {
@@ -145,12 +150,12 @@ func (i *Item) Describe() string {
 			ans += fmt.Sprintf("%s: %d\n", name, val)
 		}
 	}
-	// if len(i.Inventory) > 0 {
-	// 	ans += "Inventory: \n"
-	// 	for name, child := range i.Inventory {
-	// 		ans += fmt.Sprintf("%s: %s\n", name, child.Name)
-	// 	}
-	// }
+	if len(i.Inventory) > 0 {
+		ans += "Inventory: \n"
+		for name, child := range i.Inventory {
+			ans += fmt.Sprintf("%s: %s\n", name, child.Name)
+		}
+	}
 	return ans
 }
 
@@ -164,10 +169,13 @@ func (u *Universe) Look(i *Item) string {
 	if i.Parent != nil {
 		ans += i.Parent.Describe()
 	}
+	ans += i.Describe()
 	return ans
 }
 
-func (actor *Item) CheckCondition(c *Condition) bool {
+func (u *Universe) CheckCondition(c *Condition) bool {
+	fmt.Println("check",c)
+	actor := u.FindItem(c.ActorName)
 	if c.Type == CONDITION_PROPIS {
 		if actor.HasNumProperty(c.PropName) {
 			target_val, _ := strconv.Atoi(c.PropVal)
@@ -186,8 +194,37 @@ func (actor *Item) CheckCondition(c *Condition) bool {
 			return actor.NumPropertyValues[c.PropName] < target_val
 		}
 	} else if c.Type == CONDITION_HAS {
-		_, ok := actor.Inventory[c.ChildName]
+		fmt.Println("HAS",c.ActorName,c.ChildName)
+		_, ok := u.FindItem(c.ActorName).Inventory[c.ChildName]
 		return ok
+	} else if c.Type == CONDITION_ALL {
+		for _, sc := range c.Subconditions {
+			if !u.CheckCondition(sc) {
+				return false
+			}
+		}
+		return true
+	} else if c.Type == CONDITION_ANY {
+		for _, sc := range c.Subconditions {
+			if u.CheckCondition(sc) {
+				return true
+			}
+		}
+		return false
+	} else if c.Type == CONDITION_NOTALL {
+		for _, sc := range c.Subconditions {
+			if !u.CheckCondition(sc) {
+				return true
+			}
+		}
+		return false
+	} else if c.Type == CONDITION_NOTANY {
+		for _, sc := range c.Subconditions {
+			if u.CheckCondition(sc) {
+				return false
+			}
+		}
+		return true
 	}
 	return false
 }
@@ -219,7 +256,7 @@ func (u *Universe) RunEffect(e *Effect) []*Effect {
 				actor.StatePropertyValues[e.PropName] = e.NewVal
 			}
 		} else if e.Type == EFFECT_DO {
-			return actor.RunAction(e.Verb, u.FindItem(e.DirObj))
+			return u.RunAction(actor, e.Verb, u.FindItem(e.DirObj))
 		} else if e.Type == EFFECT_ADD {
 			if actor.HasNumProperty(e.PropName) {
 				actor.NumPropertyValues[e.PropName] += e.ToAdd
@@ -248,11 +285,12 @@ func (i *Item) CanReach(target *Item) bool {
 	return true
 }
 
-func (i *Item) RunAction(verb string, dirobj *Item) []*Effect {
+func (u *Universe) RunAction(i *Item, verb string, dirobj *Item) []*Effect {
 	fmt.Println("running action",verb,dirobj)
 	ans := []*Effect{}
 	for _, a := range i.Actions {
-		if a.Verb == verb && (dirobj == a.DirObj || i.CanReach(dirobj)) && (a.Cond == nil || i.CheckCondition(a.Cond)) {
+		if a.Verb == verb && dirobj == a.DirObj && (a.Cond == nil || u.CheckCondition(a.Cond)) {
+			fmt.Println("ACT:",a)
 			ans = append(ans, a.Effects...)
 		}
 	}
@@ -318,15 +356,15 @@ func (i *Item) SetStatePropertyValue(propname string, propval string) {
 	}
 }
 
-func (u *Universe) Do(verb, dirobj string) {
+func (u *Universe) Do(verb, dirobj string) string {
 	fmt.Println("=====ACTION=====\nplayer", verb, dirobj)
 	player := u.FindItem("player")
 	obj := u.FindItem(dirobj)
-	if obj != nil && !player.CanReach(obj) {
-		fmt.Println("No",dirobj,"accessible")
-		return
-	}
-	effects := player.RunAction(verb, obj)
+	// if obj != nil && !player.CanReach(obj) {
+	// 	fmt.Println("No",dirobj,"accessible")
+	// 	return fmt.Sprintf("No %s accessible",dirobj)
+	// }
+	effects := u.RunAction(player, verb, obj)
 	for len(effects) > 0 {
 		new_effects := []*Effect{}
 		for _, eff := range effects {
@@ -337,4 +375,5 @@ func (u *Universe) Do(verb, dirobj string) {
 	}
 	fmt.Println(player.Parent)
 	fmt.Println("---AFTERMATH---\n",u.Look(player))
+	return u.Look(player)
 }
