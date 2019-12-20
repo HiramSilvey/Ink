@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"libink/parser"
+	"libink"
 )
 
 
@@ -23,7 +23,7 @@ player can sit throne if "room has throne" then "player change status to king"
 room has player
 win "You are king! YOU WIN!" if "player property status is king"
 lose "That doesn't go with the decor at all! YOU LOSE!" if "room has ball"`
-	u := parser.ParseGame(game)
+	u := libink.ParseGame(game)
 	fmt.Println(u.Describe())
 	u.Do("sing", "")
 	u.Do("dance", "")

@@ -1,3 +1,7 @@
 wasm_exec.js
 wasm/
 *~
+\#.*
+OLD
+*.out
+node_modules

@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
+	"libink"
 	"syscall/js"
-	"libink/parser"
-	"libink/universe"
 	"github.com/docopt/docopt-go"
 	"github.com/google/shlex"
 )
 
 var Game string
-var U *universe.Universe
+var U *libink.Universe
 var c chan string
 
 func SetGame(this js.Value, inputs []js.Value) interface{} {
@@ -21,7 +20,7 @@ func SetGame(this js.Value, inputs []js.Value) interface{} {
 }
 
 func ResetGame() string {
-	U = parser.ParseGame(Game)
+	U = libink.ParseGame(Game)
 	return "done"
 }
 
@@ -33,13 +32,28 @@ func RestartGame(this js.Value, inputs []js.Value) interface{} {
 
 func DoCommand(this js.Value, inputs []js.Value) interface{} {
 	var aftermath string
-	
 	usage := `Usage:
   do <verb>
   do <verb> <obj>`
 	cmd := inputs[0].String()
+	callback := inputs[1]
+
+	fmt.Println("got")
+	fmt.Println(inputs)
+	fmt.Println(cmd)
+
+	
 	line, _ := shlex.Split(cmd)
-	args, _ := docopt.ParseArgs(usage, line, "")
+	parser := &docopt.Parser{
+		HelpHandler: docopt.PrintHelpOnly,
+		OptionsFirst: true,
+	}
+	args, err := parser.ParseArgs(usage, line, "")
+	if err != nil {
+		fmt.Println(err)
+		callback.Invoke("error")
+		return nil
+	}
 	verb := args["<verb>"].(string)
 	if do_str, ok := args["<obj>"].(string); ok {
 		aftermath = U.Do(verb, do_str)
@@ -47,13 +61,12 @@ func DoCommand(this js.Value, inputs []js.Value) interface{} {
 		aftermath = U.Do(verb, "")
 	}
 	fmt.Println(aftermath)
-	callback := inputs[1]
 	callback.Invoke(aftermath)
 	return nil
 }
 
 func main() {
-	U = universe.MakeUniverse()
+	U = libink.MakeUniverse()
 	c = make(chan string, 100)
 	js.Global().Set("InkSetGame", js.FuncOf(SetGame))
 	js.Global().Set("InkRestartGame", js.FuncOf(RestartGame))
