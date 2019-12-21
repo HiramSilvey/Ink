@@ -1,0 +1,25 @@
+player is "you"
+room is "Your jail cell"
+pear is "A pear"
+hands is "Your own two hands"
+phone is "A cell phone"
+friend is "Your friend"
+ring is "A ring"
+pear is "A pear"
+halves is "Two halves of a pear"
+hole is "A hole"
+
+room has player
+player has hands
+player has phone
+
+player property status can be prisoner "You are a prisoner"
+player property status can be free "You are free"
+
+player can wring hands then "player get ring"
+player can call friend if "player has ring" then 'describe "You give him a ring. No answer. The phone gives the ring back. Now you have a pear"' "player get pear"
+player can stare pear is "player has pear" then 'describe "you saw the pear; it is now in two halves"' "player drop pear" "player get halves"
+player can combine halves if "player has halves" then 'describe "You combine the halves to make a hole" "player get hole"
+player can use hole if "player has hole" then 'describe "You escape through the hole"' "player change status to free"
+
+win if "player property status is free"

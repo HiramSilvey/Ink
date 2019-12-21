@@ -73,16 +73,6 @@ func (u *Universe) FindItem(name string) *Item {
 	return nil
 }
 
-func (u *Universe) Describe() string {
-	ans := ""
-	ans += "Items:\n"
-	for _, i := range u.Items {
-		ans += i.Describe(false)
-	}
-	
-	return ans
-}
-
 func (u *Universe) Look(i *Item) string {
 	ans := "You can see:\n"
 	for name, target := range u.Items {
@@ -104,6 +94,15 @@ func (u *Universe) Look(i *Item) string {
 	if len(i.Description) > 0 {
 		ans += "You are:\n"
 		ans += i.Describe(false)
+	}
+	return ans
+}
+
+
+func (u *Universe) LookAt(i *Item, target *Item) string {
+	ans := ""
+	if i.CanReach(target) && target != i {
+		ans += target.Describe(false)
 	}
 	return ans
 }
@@ -209,8 +208,17 @@ func (u *Universe) RunEffect(e *Effect) []*Effect {
 func (u *Universe) Do(verb, dirobj string) string {
 	u.Messages = []string{}
 	player := u.FindItem("player")
-	if verb == "look" && dirobj == "" {
-		return u.Look(player)
+	if verb == "look" {
+		if dirobj == "" {
+			return u.Look(player)
+		} else {
+			tgt := u.FindItem(dirobj)
+			if tgt != nil {
+				return u.LookAt(player, tgt)
+			} else {
+				return "You want to look at what?"
+			}
+		}
 	}
 	fmt.Println("=====ACTION=====\nplayer", verb, dirobj)
 	obj := u.FindItem(dirobj)
@@ -233,7 +241,7 @@ func (u *Universe) Do(verb, dirobj string) string {
 		if u.CheckCondition(r.Cond) {
 			fmt.Println("LOSE")
 			fmt.Println(r.Description)
-			return "LOSE"
+			return fmt.Sprintf("%s YOU LOSE!",r.Description)
 		}
 	}
 	fmt.Println("checking wins")
@@ -241,7 +249,7 @@ func (u *Universe) Do(verb, dirobj string) string {
 		if u.CheckCondition(r.Cond) {
 			fmt.Println("WIN")
 			fmt.Println(r.Description)
-			return "WIN"
+			return fmt.Sprintf("%s YOU WIN!",r.Description)
 		}
 	}
 	fmt.Println("---AFTERMATH---\n",u.Look(player))

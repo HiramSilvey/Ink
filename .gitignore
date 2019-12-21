@@ -5,3 +5,4 @@ wasm/
 OLD
 *.out
 node_modules
+pkg

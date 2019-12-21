@@ -2,6 +2,7 @@ package libink
 
 import (
 	"fmt"
+	"strings"
 	"io/ioutil"
 	"testing"
 )
@@ -66,8 +67,8 @@ object1 property prop2 is 5`
 }
 
 
-func TestGameBig(t *testing.T) {
-	game, _ := ioutil.ReadFile("test.ink")
+func TestGameWin(t *testing.T) {
+	game, _ := ioutil.ReadFile("../../games/birthday.txt")
 	gamestr := string(game)
 	u := ParseGame(gamestr)
 	u.Do("eat", "cheese")
@@ -77,6 +78,7 @@ func TestGameBig(t *testing.T) {
 	u.Do("use", "slats")
 	u.Do("wait", "")
 	u.Do("write", "poem")
+	u.Do("look", "")
 	u.Do("stare", "log")
 	u.Do("stare", "log")
 	u.Do("stare", "log")
@@ -86,6 +88,7 @@ func TestGameBig(t *testing.T) {
 	u.Do("go", "outdoors")
 	u.Do("wait", "")
 	u.Do("use", "slats")
+	u.Do("look", "slats")
 	u.Do("go", "library")
 	u.Do("use", "mouse")
 	u.Do("use", "computer")
@@ -93,7 +96,10 @@ func TestGameBig(t *testing.T) {
 	u.Do("go", "outdoors")
 	u.Do("write", "poem")
 	u.Do("tar", "key")
-	u.Do("wrap", "keytar")
+	ans := u.Do("wrap", "keytar")
+	if !strings.Contains(ans, "WIN") {
+		t.Errorf("Expected a win. Got %s\n",ans)
+	}
 	fmt.Println(u)
 }
 
