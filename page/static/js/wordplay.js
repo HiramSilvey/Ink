@@ -19,8 +19,8 @@ player can throw ball if "player has ball" then "room get throne" "describe 'The
 player can drop ball if "player has ball" then "player drop ball" "room get ball"
 player can sit throne if "room has throne" then "player change status to king"
 room has player
-win "You are king! YOU WIN!" if "player property status is king"
-lose "That doesn't go with the decor at all! YOU LOSE!" if "room has ball"`,
+win "You are king!" if "player property status is king"
+lose "That doesn't go with the decor at all!" if "room has ball"`,
 		command: "Enter command here"
 	    };
 	    

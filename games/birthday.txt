@@ -87,5 +87,5 @@ player can go library if "outdoors has player" then "outdoors drop player" "libr
 player can go basement if "library has player" then "library drop player" "basement get player"
 player can go outdoors if "library has player" then "library drop player" "outdoors get player"
 
-lose "You stunk up the library. How dare you. YOU LOSE." if "library property smell is stinky" 
-win "You have a present! Happy Hanukkah! YOU WIN." if "player has present"
+lose "You stunk up the library. How dare you." if "library property smell is stinky" 
+win "You have a present! Happy Hanukkah!" if "player has present"

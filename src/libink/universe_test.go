@@ -103,3 +103,17 @@ func TestGameWin(t *testing.T) {
 	fmt.Println(u)
 }
 
+
+func TestGameLose(t *testing.T) {
+	game, _ := ioutil.ReadFile("../../games/birthday.txt")
+	gamestr := string(game)
+	u := ParseGame(gamestr)
+	u.Do("eat", "cheese")
+	u.Do("go", "library")
+	ans := u.Do("fart", "")
+	if !strings.Contains(ans, "LOSE") {
+		t.Errorf("Expected a win. Got %s\n",ans)
+	}
+	fmt.Println(u)
+}
+

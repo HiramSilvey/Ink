@@ -241,7 +241,8 @@ func (u *Universe) Do(verb, dirobj string) string {
 		if u.CheckCondition(r.Cond) {
 			fmt.Println("LOSE")
 			fmt.Println(r.Description)
-			return fmt.Sprintf("%s YOU LOSE!",r.Description)
+			u.Messages = append(u.Messages,r.Description)
+			u.Messages = append(u.Messages,"YOU LOSE.")
 		}
 	}
 	fmt.Println("checking wins")
@@ -249,7 +250,8 @@ func (u *Universe) Do(verb, dirobj string) string {
 		if u.CheckCondition(r.Cond) {
 			fmt.Println("WIN")
 			fmt.Println(r.Description)
-			return fmt.Sprintf("%s YOU WIN!",r.Description)
+			u.Messages = append(u.Messages,r.Description)
+			u.Messages = append(u.Messages,"YOU WIN.")
 		}
 	}
 	fmt.Println("---AFTERMATH---\n",u.Look(player))
