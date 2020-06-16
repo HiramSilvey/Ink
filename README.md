@@ -10,6 +10,6 @@ TBD
 
 ## License
 
-Copyright © 2019 Ink
+Copyright © 2020 Ink
 
 Distributed under the GNU Public License version 3 (GPLv3) or higher.
