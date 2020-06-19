@@ -1,4 +1,3 @@
-wasm_exec.js
 wasm/
 *~
 \#.*
@@ -6,3 +5,5 @@ OLD
 *.out
 node_modules
 pkg
+ink.wasm
+wasm_exec.js
